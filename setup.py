@@ -19,9 +19,10 @@ setup(
     install_requires=['scipy', 'pandas', 'numpy', 'sympy', 'IPython'],
     keywords=['python', 'data analysis', 'lab', 'data', 'symbolic'],
     classifiers=[
-        "Development Status :: Development",
-        "Intended Audience :: Students",
+        "Development Status :: 1 - Planning",
+        "Intended Audience :: Science/Research",
         "Programming Language :: Python :: 3",
+        "Framework :: Jupyter",
         "Operating System :: Unix",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",

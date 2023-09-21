@@ -21,6 +21,9 @@ class Helper:
             self.consts = [sp.Symbol(e) for e in const_in]
         else:
             self.consts = []
+        for var in self.vars_text + self.consts_text:
+            func_str = func_str.replace(var, "Symbol('" + var + "')")
+
         self.function = sp.parse_expr(func_str)
         
         if not all(item in self.function.atoms(sp.Symbol) for item in self.vars + self.consts):
@@ -76,6 +79,8 @@ class Helper:
 
         evaluate_function({"A": 0.5, "C": 3}) This will leave "b" and "d" as variables
         """
+        if not all(item in self.consts_text + self.vars_text for item in subs.keys()):
+            raise ValueError("The given variables and/or constants are not the same as in the given function")
         return float(self.function.evalf(subs=subs)) if as_float else self.function.evalf(subs=subs)
     
     def evaluate_error_function(self, subs: dict, as_float: bool = False):
@@ -90,6 +95,11 @@ class Helper:
 
         evaluate_function({"A": 0.5, "C": 3}) This will leave "\\Delta A" and "\\Delta B" as variables
         """
+        if self.error_function == None:
+            self.evaluate_error_function()
+        
+        if not all(item in self.consts_text + self.vars_text + self.errors_text for item in subs.keys()):
+            raise ValueError("The given variables and/or constants are not the same as in the error function")
         return float(self.error_function.evalf(subs=subs)) if as_float else self.error_function.evalf(subs=subs)
     
     def solve_error_function_for_variable(self, variable_to_solve: str, function_value = None, rest_of_variables: dict = None, symbolically = False):
@@ -107,6 +117,8 @@ class Helper:
         else:
             if rest_of_variables == None:
                 raise ValueError("must provide rest_of_variables parameter, or set symbolically to True")
+            if not all(item in self.consts_text + self.vars_text + self.errors_text for item in rest_of_variables.keys()):
+                raise ValueError("The given variables and/or constants are not the same as in the error function")
             return sp.solve(sp.Equality(self.error_function.evalf(subs=rest_of_variables), function_value), sp.Symbol(variable_to_solve))
         
     def solve_error_function_for_all_variables(self, function_value = None, rest_of_variables: dict = None, symbolically: bool = False):
@@ -127,6 +139,8 @@ class Helper:
         else:
             if rest_of_variables == None or function_value == None:
                 raise ValueError("must provide rest_of_variables and function_value parameters")
+            if not all(item in self.consts_text + self.vars_text + self.errors_text for item in rest_of_variables.keys()):
+                raise ValueError("The given variables and/or constants are not the same as in the error function")
             for var in self.vars:
                 dict_cpy = rest_of_variables.copy()
                 dict_cpy.pop(var.name)

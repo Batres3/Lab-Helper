@@ -113,6 +113,8 @@ class Helper:
         """
         if symbolically:
             function_value = sp.Symbol(self.error_mark + "f")
+            if variable_to_solve not in self.vars_text + self.consts_text + self.errors_text:
+                raise ValueError("value of variable_to_solve is not a parameter of error function")
             return sp.solve(sp.Equality(self.error_function, function_value), sp.Symbol(variable_to_solve))
         else:
             if rest_of_variables == None:

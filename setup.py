@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import codecs
 import os
 
-VERSION = '0.0.2'
+VERSION = '0.0.3'
 DESCRIPTION = 'A basic package with handy function for lab work, made for Jupyter Notebooks'
 LONG_DESCRIPTION = 'A package with utility functions to make using python in the lab faster, specifically for the Complutense University of Madrid Physics Bachelor.'
 

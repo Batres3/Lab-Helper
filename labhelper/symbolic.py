@@ -13,7 +13,7 @@ class Helper:
     MAKE SURE THAT THE PROVIDED VARIABLES IN vars_in, const_in MATCH EXACTLY WITH THE VARIABLES AND CONSTANTS IN THE FUNCTION
     """
     # For Readers looking at the documentation from source code keep in mind \\ is equivalent to \ because of the manner in which python parses docstrings
-    def __init__(self, func_str: str, vars_in: list[str] , const_in: list[str] = None, error_mark: str = "\Delta ") -> None:
+    def __init__(self, func_str: str, vars_in: list[str] , const_in: list[str] | None = None, error_mark: str = r"\Delta ") -> None:
         self.vars_text = vars_in
         self.vars = [sp.Symbol(e) for e in vars_in]
         if const_in != None:
@@ -96,7 +96,7 @@ class Helper:
         evaluate_function({"A": 0.5, "C": 3}) This will leave "\\Delta A" and "\\Delta B" as variables
         """
         if self.error_function == None:
-            self.evaluate_error_function()
+            self.calculate_error_function()
         
         if not all(item in self.consts_text + self.vars_text + self.errors_text for item in subs.keys()):
             raise ValueError("The given variables and/or constants are not the same as in the error function")

@@ -3,3 +3,4 @@
 /labhelper.egg-info
 *.whl
 *.tar.gz
+*.code-workspace

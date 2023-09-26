@@ -102,6 +102,28 @@ class Helper:
             raise ValueError("The given variables and/or constants are not the same as in the error function")
         return float(self.error_function.evalf(subs=subs)) if as_float else self.error_function.evalf(subs=subs)
     
+
+    def solve_function_for_variable(self, variable_to_solve: str, function_value = None, rest_of_variables: dict = None, symbolically = False):
+        """
+        Calculates the value the given variable "variable_to_solve" must have in order to make the error function equal "function_value"
+        
+        If "symbolically" is set to True, the only required input is "variable_to_solve"
+
+        Useful for checking where the differences between experimental and theoretical values arise from, as it can give the value that the
+        error must take in order to match the experimental value
+        """
+        if symbolically:
+            function_value = sp.Symbol("f")
+            if variable_to_solve not in self.vars_text + self.consts_text:
+                raise ValueError("value of variable_to_solve is not a parameter of error function")
+            return sp.solve(sp.Equality(self.function, function_value), sp.Symbol(variable_to_solve))
+        else:
+            if rest_of_variables == None:
+                raise ValueError("must provide rest_of_variables parameter, or set symbolically to True")
+            if not all(item in self.consts_text + self.vars_text + self.errors_text for item in rest_of_variables.keys()):
+                raise ValueError("The given variables and/or constants are not the same as in the error function")
+            return sp.solve(sp.Equality(self.function.evalf(subs=rest_of_variables), function_value), sp.Symbol(variable_to_solve))
+
     def solve_error_function_for_variable(self, variable_to_solve: str, function_value = None, rest_of_variables: dict = None, symbolically = False):
         """
         Calculates the value the given variable "variable_to_solve" must have in order to make the error function equal "function_value"

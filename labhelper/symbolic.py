@@ -173,3 +173,15 @@ class Helper:
                 print("=\n")
                 display(sp.solve(sp.Equality(self.error_function.evalf(subs=dict_cpy), function_value), var))
                 print("---------------")
+
+
+def error_function_from_sympy_expression(function, variables):
+    error_function = 0
+    errors = [r"\Delta " + e for e in variables]
+    variables = [sp.Symbol(e) for e in variables]
+    errors = [sp.Symbol(e) for e in errors]
+    for i in range(len(variables)): 
+        a = sp.Mul(errors[i], sp.diff(function, variables[i]), evaluate= False)
+        b = sp.Pow(a, 2, evaluate=False)
+        error_function = sp.Add(error_function, b)
+    return sp.sqrt(error_function)

@@ -3,6 +3,12 @@ from IPython.display import display
 
 sp.init_printing()
 
+def list_swap(l: list, x, y):
+    if x not in l or y not in l:
+        ValueError("elements not in given list!")
+    el = [l.index(x), l.index(y)]
+    l[el[0]], l[el[1]] = l[el[1]], l[el[0]]
+
 class Helper:
     """
     Helper class made to simplify the process of making a function programatically and to calculate the error function associated to the given function.
@@ -13,18 +19,24 @@ class Helper:
     MAKE SURE THAT THE PROVIDED VARIABLES IN vars_in, const_in MATCH EXACTLY WITH THE VARIABLES AND CONSTANTS IN THE FUNCTION
     """
     # For Readers looking at the documentation from source code keep in mind \\ is equivalent to \ because of the manner in which python parses docstrings
-    def __init__(self, func_str: str, vars_in: list[str] , const_in: list[str] | None = None, error_mark: str = r"\Delta ") -> None:
+    def __init__(self, func_str: str, vars_in: list[str] , const_in: list[str] = [], error_mark: str = r"\Delta ") -> None:
         self.vars_text = vars_in
         self.vars = [sp.Symbol(e) for e in vars_in]
-        if const_in != None:
-            self.consts_text = const_in
+        self.consts_text = const_in
+        if const_in:
             self.consts = [sp.Symbol(e) for e in const_in]
         else:
             self.consts = []
-        for var in self.vars_text + self.consts_text:
-            func_str = func_str.replace(var, "Symbol('" + var + "')")
+        all_vars = self.vars + self.consts
+        text = vars_in + const_in
 
-        self.function = sp.parse_expr(func_str)
+        [list_swap(text, x, y) for x in text for y in text if x in y and text.index(x) < text.index(y)]
+        uni = [str(chr(0x0F0 + i)) for i in range(len(text))]
+        for i in range(len(text)):
+            func_str = func_str.replace(text[i], uni[i])
+        dict_in = {uni[i]: all_vars[i] for i in range(len(text))}
+
+        self.function = sp.parse_expr(func_str, dict_in)
         
         if not all(item in self.function.atoms(sp.Symbol) for item in self.vars + self.consts):
             raise ValueError("The given variables and/or constants are not the same as in the given function")

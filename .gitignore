@@ -1,6 +1,7 @@
 /.vscode
 /build
 /labhelper.egg-info
+/.vs
 *.whl
 *.tar.gz
 *.code-workspace

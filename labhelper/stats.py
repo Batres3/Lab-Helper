@@ -8,7 +8,7 @@ def random_error_of_mean(std, num_samples, confidence):
 
         t_n-1 * (σ_n-1 / √n)
     """
-    return std * t.ppf(1 - (1-confidence)*0.5 + confidence, num_samples - 1) * np.sqrt(num_samples)
+    return std * student_t_n(num_samples - 1, confidence) / np.sqrt(num_samples)
 
 def student_t_n(degrees_of_freedom, confidence):
     """

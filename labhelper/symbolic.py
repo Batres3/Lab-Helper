@@ -94,7 +94,7 @@ class Helper:
                 raise ValueError("The given variables and/or constants are not the same as in the given function")
             return float(self._function.evalf(subs=subs))
         
-        subs = {e[0]: e[1] for e in self.data_variables.items() if e[1] != None}
+        subs = {e[0]: e[1] for e in self.data_variables.items() if e[1] is not None}
         if any(isinstance(e, list) for e in subs.values()):
             list_keys = [e[0] for e in list(subs.items()) if isinstance(e[1], list)]
             n = len(subs[list_keys[0]])
@@ -135,7 +135,7 @@ class Helper:
             return float(self._error_function.evalf(subs=subs))
 
         subs = {**self.data_variables, **self.data_errors} 
-        subs = {e[0]: e[1] for e in subs.items() if e[1] != None}
+        subs = {e[0]: e[1] for e in subs.items() if e[1] is not None}
         if any(isinstance(e, list) for e in subs.values()):
             list_keys = [e[0] for e in list(subs.items()) if isinstance(e[1], list)]
             n = len(subs[list_keys[0]])
@@ -175,7 +175,7 @@ class Helper:
             if rest_of_variables == None:
                 if any(isinstance(e, list) for e in self.data_variables.values()):
                     raise ValueError("Some variable in data_variables is a list. Cannot work with lists")
-                subs = {e[0]: e[1] for e in self.data_variables.items() if e[1] != None}
+                subs = {e[0]: e[1] for e in self.data_variables.items() if e[1] is not None}
                 subs.pop(variable_to_solve)
                 return solve(Equality(self._function.evalf(subs=subs), function_value), Symbol(variable_to_solve))
             if not all(item in self._consts_text + self._vars_text + self._errors_text for item in rest_of_variables.keys()):
@@ -199,7 +199,7 @@ class Helper:
         else:
             if rest_of_variables == None:
                 subs = {**self.data_variables, **self.data_errors} 
-                subs = {e[0]: e[1] for e in subs.items() if e[1] != None}
+                subs = {e[0]: e[1] for e in subs.items() if e[1] is not None}
                 subs.pop(variable_to_solve)
                 if any(isinstance(e, list) for e in subs.values()):
                     raise ValueError("Some variable in data_variables is a list. Cannot work with lists")
@@ -226,7 +226,7 @@ class Helper:
         else:
             if rest_of_variables == None:
                 subs = {**self.data_variables, **self.data_errors} 
-                subs = {e[0]: e[1] for e in subs.items() if e[1] != None}
+                subs = {e[0]: e[1] for e in subs.items() if e[1] is not None}
                 dict_cpy = subs.copy()
                 dict_cpy.pop(var.name)
                 print("---------------")

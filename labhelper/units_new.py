@@ -1,7 +1,8 @@
 from numbers import Number
-from enum import Enum, IntEnum
-from math import sqrt
+from enum import IntEnum
 from fractions import Fraction
+from math import sqrt
+
 def prime_factorization_int(n: int) -> list[tuple[int, int]]:
     if n == 1:
         return []
@@ -34,188 +35,33 @@ def prime_factorization_int(n: int) -> list[tuple[int, int]]:
     return [(factor, power) for factor, power in zip(fac, powers)]
 
 
-def prime_factorization(n: float, custom_factors: list[float] | None = None) -> list[tuple[int, int]]:
+def prime_factorization(n: float) -> list[tuple[int, int]]:
     positive_factors = []
     negative_factors = []
-    if custom_factors is not None:
-        for factor in custom_factors:
-            count = 0
-            print(n % factor)
-            while n % factor == 0:
-                count += 1
-                n = n//factor
-            positive_factors.append((factor, count))
 
     top, bottom = Fraction(n).limit_denominator().as_integer_ratio()
     positive_factors = prime_factorization_int(top)
     negative_factors = [(factor, -power) for factor, power in prime_factorization_int(bottom)]
-    return positive_factors + negative_factors
+    final = positive_factors + negative_factors
+    final.sort()
+    return final
 
-class Prefix(Enum):
-    QUETTA = 1e30
-    RONNA  = 1e27
-    YOTTA  = 1e24
-    ZETTA  = 1e21
-    EXA    = 1e18
-    PETA   = 1e15
-    TERA   = 1e12
-    GIGA   = 1e9
-    MEGA   = 1e6
-    KILO   = 1e3
-    HECTO  = 1e2
-    DECA   = 1e1
-    NONE   = 1
-    DECI   = 1e-1
-    CENTI  = 1e-2
-    MILI   = 1e-3
-    MICRO  = 1e-6
-    NANO   = 1e-9
-    PICO   = 1e-12
-    FEMTO  = 1e-15
-    ATTO   = 1e-18
-    ZEPTO  = 1e-21
-    YOCTO  = 1e-24
-    RONTO  = 1e-27
-    QUECTO = 1e-30
-    
-    def __mul__(self, other):
-        if isinstance(other, Number):
-            return other * self.value
-        if isinstance(other, Prefix):
-            try:
-                return Prefix(self.value * other.value)
-            except:
-                return self.value * other.value
-    def __rmul__(self, other):
-        if isinstance(other, Number):
-            return other * self.value
-    def __truediv__(self, other):
-        if isinstance(other, Number):
-            return self.value / other
-        if isinstance(other, Prefix):
-            try:
-                return Prefix(self.value / other.value)
-            except:
-                return self.value / other.value
-    def __rtruediv__(self, other):
-        if isinstance(other, Number):
-            return other / self.value
-    
-    def __float__(self):
-        return float(self.value)
-    def __int__(self):
-        return int(self.value)
-
-    def __str__(self):
-        match self:
-            case Prefix.QUETTA:
-                return "Q"
-            case Prefix.RONNA:
-                return "R"
-            case Prefix.YOTTA:
-                return "Y"
-            case Prefix.ZETTA: 
-                return "Z"
-            case Prefix.EXA: 
-                return "E"
-            case Prefix.PETA:  
-                return "P"
-            case Prefix.TERA:  
-                return "T"
-            case Prefix.GIGA:  
-                return "G"
-            case Prefix.MEGA:  
-                return "M"
-            case Prefix.KILO:  
-                return "k"
-            case Prefix.HECTO: 
-                return "h"
-            case Prefix.DECA:  
-                return "da"
-            case Prefix.NONE:  
-                return ""
-            case Prefix.DECI:  
-                return "d"
-            case Prefix.CENTI: 
-                return "c"
-            case Prefix.MILI:  
-                return "m"
-            case Prefix.MICRO: 
-                return "µ"
-            case Prefix.NANO:  
-                return "n"
-            case Prefix.PICO:  
-                return "p"
-            case Prefix.FEMTO: 
-                return "f"
-            case Prefix.ATTO:  
-                return "a"
-            case Prefix.ZEPTO: 
-                return "z"
-            case Prefix.YOCTO: 
-                return "y"
-            case Prefix.RONTO: 
-                return "r"
-            case Prefix.QUECTO:
-                return "q"
-
-class Unit(Enum):
-    NONE = 1
-    METER = 2
-    SECOND = 3
-    KILOGRAM = 5
-    KELVIN = 7
-    AMPERE = 11
-    MOL = 13
-    CANDELA = 17
-    HERTZ = 1 / SECOND
-    NEWTON = METER * KILOGRAM * (1/SECOND**2)
-    def __mul__(self, other):
-        if isinstance(other, Number):
-            return Quantity(value=other, units=self)
-        if isinstance(other, Prefix):
-            return Quantity(value=other.value, units=self)
-        if isinstance(other, Unit):
-            return Quantity(units=Unit(self.value * other.value))
-    def __rmul__(self, other):
-        if isinstance(other, Number):
-            return Quantity(value=other, units=self)
-        if isinstance(other, Prefix):
-            return Quantity(value=other.value, units=self)
-    def __truediv__(self, other):
-        if isinstance(other, Number):
-            return Quantity(1/other, (self.value))
-        if isinstance(other, BasicUnit):
-            return Quantity(unit=(self.value)) / Quantity(unit=(other))
-    def __rtruediv__(self, other):
-        if isinstance(other, Number):
-            return Quantity(other, (float(1/self)))
-        if isinstance(other, BasicUnit):
-            return Quantity(unit=(other)) / Quantity(unit=(self.value))
-
-    def __int__(self):
-        return int(self.value)
-    def __float__(self):
-        return float(self.value)
-
-    def __str__(self):
-        match self:
-            case Unit.METER:
-                return "m"
-            case Unit.SECOND:
-                return "s"
-            case Unit.KILOGRAM:
-                return "kg"
-            case Unit.KELVIN:
-                return "K"
-            case Unit.AMPERE:
-                return "A"
-            case Unit.MOL:
-                return "mol"
-            case Unit.CANDELA:
-                return "cd"
+def custom_factors(n: float, custom_factors: list[float]):
+    num_factors = prime_factorization(n)
+    factors_check = [prime_factorization(custom) for custom in custom_factors]
+    final = []
+    for fac, custom in zip(factors_check, custom_factors):
+        if all(prime_fac[0] in [e[0] for e in num_factors] for prime_fac in fac):
+        #if all(prime_fac[0] == prime_n[0] and abs(prime_fac[1]) <= abs(prime_n[1]) for prime_fac, prime_n in zip(fac, num_factors)):
+            matching = [a for a in num_factors if a[0] in [b[0] for b in fac]]
+            not_matching = [a for a in num_factors if a not in matching]
+            power = min([prime_n[1]//prime_fac[1] for prime_fac, prime_n in zip(fac, matching)], key=abs)
+            num_factors = [(prime_n[0], prime_n[1] - prime_fac[1]*power) for prime_fac, prime_n in zip(fac, matching) if prime_n[1] - prime_fac[1]*power != 0] + not_matching
+            final.append((custom, power))
+    return final + num_factors
 
 class DefaultUnits(IntEnum):
+    none = 1
     meter = 2
     second = 3
     kilogram = 5
@@ -226,6 +72,8 @@ class DefaultUnits(IntEnum):
 
     def __str__(self):
         match self:
+            case DefaultUnits.none:
+                return ""
             case DefaultUnits.meter:
                 return "m"
             case DefaultUnits.second:
@@ -242,56 +90,59 @@ class DefaultUnits(IntEnum):
                 return "cd"
 
 class Quantity:
-    def __init__(self, value: Number = 1, units: float = 1, expected_units: list | None = None) -> None:
+    _SI_map: dict[int, str] = {2: "m", 3:"s", 5:"kg", 7:"K", 11:"A", 13:"mol", 17:"cd"}
+    def __init__(self, value: Number = 1, units: float = 1, expected_units: list = [], custom_string: str = "") -> None:
         self.units = units
         self.value = value
-        self.expected_units: list[Quantity] | None = expected_units
-        self.custom_string: str | None = None
+        self.expected_units: list[Quantity] = expected_units
+        self.unit_map = Quantity._SI_map
+        self.custom_string: str = custom_string
 
     def _units_to_strings(self) -> tuple[Number, str]:
-        if self.expected_units is None:
-            factors = prime_factorization(self.units)
-            value = self.value
-            units = [ f"{str(DefaultUnits(factor))}^{power}" if power != 1 else f"{str(DefaultUnits(factor))}" for factor, power in factors]
-        else:
-            self._validate_units()
-            units_vals = self.units
-            value = self.value
-            units = []
-            for unit in self.expected_units:
-                units_vals /= unit.units
-                value /= unit.value
-                units += unit.custom_string
-            remaining_factors = prime_factorization(units_vals)
-            units += [f"{str(DefaultUnits(factor))}^{power}" if power != 1 else f"{str(DefaultUnits(factor))}" for factor, power in remaining_factors]
+        units_vals = self.units
+        value = self.value
+        custom_map = self.unit_map | {unit.units:unit.custom_string for unit in self.expected_units}
+        units = []
+        factors = custom_factors(units_vals, [e.units for e in self.expected_units])
+        for unit in self.expected_units:
+            try:
+                power = [e[1] for e in factors if e[0] == unit.units][0]
+            except:
+                continue
+            value /= unit.value**power
+
+        units = [f"{custom_map.get(e[0])}^{e[1]}" if e[1] != 1 else f"{custom_map.get(e[0])}" for e in factors]
         return value, " * ".join(units)
 
     def _set_custom_string(self, text: str) -> None:
         self.custom_string = text
 
     def _get_expected_units(self, other, division: bool = False) -> list | None:
-        if self.expected_units is not None:
-            if other.expected_units is not None:
-                return self.expected_units + other.expected_units
+        if (self.units == DefaultUnits.none or other.units == DefaultUnits.none):
+            newUnit = Quantity(value=self.value*other.value, units=self.units*other.units)
+            newUnit.custom_string = self.custom_string + other.custom_string
+            if self.units == DefaultUnits.none:
+                try:
+                    other.expected_units[0] = newUnit
+                except:
+                    other.expected_units = [newUnit]
             else:
-                return self.expected_units
-        else:
-            if other.expected_units is not None:
-                return other.expected_units
-            else:
-                return None
+                try:
+                    self.expected_units[0] = newUnit
+                except:
+                    self.expected_units = [newUnit]
+        return list(set(self.expected_units + other.expected_units))
+    
+    def to_SI(self):
+        self.expected_units = []
+        return self
+    
+    def to_units(self, units):
+        if not isinstance(units, list):
+            units = [units]
+        self.expected_units = units
+        return self
 
-    def _validate_units(self) -> None:
-        if self.expected_units is None:
-            raise ValueError("expected_units are not specified!")
-        units = self.units
-        for unit in self.expected_units:
-            if units % unit.units != 0:
-                raise ValueError("expected_units do not match with given units!")
-            if unit.custom_string is None:
-                raise ValueError("custom_string not specified!")
-            units /= unit.units
-        
     def __str__(self): 
         val, units = self._units_to_strings() 
         return f"{val} {units}"
@@ -314,31 +165,92 @@ class Quantity:
 
     def __rtruediv__(self, other):
         if isinstance(other, Number):
-            if self.expected_units is None:
-                return Quantity(value=other/self.value, units=1/self.units) 
-            else:
-                return Quantity(value=other/self.value, units=1/self.units, expected_units=[unit**-1 for unit in self.expected_units])
+            return Quantity(value=other/self.value, units=1/self.units, expected_units=[unit**-1 for unit in self.expected_units])
 
     def __pow__(self, other):
         if isinstance(other, int):
-            if self.expected_units is None:
-                return Quantity(value=self.value**other, units=self.units**other)
-            else:
-                return Quantity(value=self.value**other, units=self.units**other, expected_units=self.expected_units)
+            return Quantity(value=self.value**other, units=self.units**other, expected_units=self.expected_units)
 
+    def __float__(self):
+        return self.value
 
-meter = Quantity(1, DefaultUnits.meter)
-second = Quantity(1, DefaultUnits.second)
-kilogram = Quantity(1, DefaultUnits.kilogram)
-gram = Quantity(1e-3, DefaultUnits.kilogram)
-kelvin = Quantity(1, DefaultUnits.kelvin)
-ampere = Quantity(1, DefaultUnits.ampere)
-mol = Quantity(1, DefaultUnits.mol)
-candela = Quantity(1, DefaultUnits.candela)
+# ------------ DEFINITIONS ---------------
 
-newton = kilogram*meter/second**2
-newton._set_custom_string("N")
-newton.expected_units = [newton]
-#test = 10/newton
-#print(newton**2)
-print(prime_factorization((5*2/3**2)**2, [5*2/3**2]))
+meter = Quantity(1, DefaultUnits.meter, custom_string="m")
+second = Quantity(1, DefaultUnits.second, custom_string="s")
+kilogram = Quantity(1, DefaultUnits.kilogram, custom_string="kg")
+gram = Quantity(1e-3, DefaultUnits.kilogram, custom_string="g")
+kelvin = Quantity(1, DefaultUnits.kelvin, custom_string="K")
+ampere = Quantity(1, DefaultUnits.ampere, custom_string="A")
+mol = Quantity(1, DefaultUnits.mol, custom_string="mol")
+candela = Quantity(1, DefaultUnits.candela, custom_string="cd")
+
+quetta = Quantity(1e30, units=DefaultUnits.none, custom_string="Q")
+ronna  = Quantity(1e27, units=DefaultUnits.none, custom_string="R")
+yotta  = Quantity(1e24, units=DefaultUnits.none, custom_string="Y")
+zetta  = Quantity(1e21, units=DefaultUnits.none, custom_string="Z")
+exa    = Quantity(1e18, units=DefaultUnits.none, custom_string="E")
+peta   = Quantity(1e15, units=DefaultUnits.none, custom_string="P")
+tera   = Quantity(1e12, units=DefaultUnits.none, custom_string="T")
+giga   = Quantity(1e9, units=DefaultUnits.none, custom_string="G")
+mega   = Quantity(1e6, units=DefaultUnits.none, custom_string="M")
+kilo   = Quantity(1e3, units=DefaultUnits.none, custom_string="k")
+hecto  = Quantity(1e2, units=DefaultUnits.none, custom_string="h")
+deca   = Quantity(1e1, units=DefaultUnits.none, custom_string="da")
+deci   = Quantity(1e-1, units=DefaultUnits.none, custom_string="d")
+centi  = Quantity(1e-2, units=DefaultUnits.none, custom_string="c")
+mili   = Quantity(1e-3, units=DefaultUnits.none, custom_string="m")
+micro  = Quantity(1e-6, units=DefaultUnits.none, custom_string="µ")
+nano   = Quantity(1e-9, units=DefaultUnits.none, custom_string="n")
+pico   = Quantity(1e-12, units=DefaultUnits.none, custom_string="p")
+femto  = Quantity(1e-15, units=DefaultUnits.none, custom_string="f")
+atto   = Quantity(1e-18, units=DefaultUnits.none, custom_string="a")
+zepto  = Quantity(1e-21, units=DefaultUnits.none, custom_string="z")
+yocto  = Quantity(1e-24, units=DefaultUnits.none, custom_string="y")
+ronto  = Quantity(1e-27, units=DefaultUnits.none, custom_string="r")
+quecto = Quantity(1e-30, units=DefaultUnits.none, custom_string="q")
+
+def __define_unit(unit, symbol) -> None:
+    unit._set_custom_string(symbol)
+    unit.expected_units = [unit]
+
+hertz = second**-1
+__define_unit(hertz, "Hz")
+newton = kilogram*meter*second**-2
+__define_unit(newton, "N")
+pascal = newton/meter**2
+__define_unit(pascal, "Pa")
+joule = newton*meter
+__define_unit(joule, "J")
+watt = joule/second
+__define_unit(watt, "W")
+coulomb = ampere*second
+__define_unit(coulomb, "C")
+volt = joule/coulomb
+__define_unit(volt, "V")
+farad = coulomb/volt
+__define_unit(farad, "F")
+ohm = volt/ampere
+__define_unit(ohm, "Ω")
+siemens = ohm**-1
+__define_unit(siemens, "S")
+weber = volt*second
+__define_unit(weber, "Wb")
+tesla = weber/meter**2
+__define_unit(tesla, "T")
+henry = weber/ampere
+__define_unit(henry, "H")
+# TODO: ºC
+
+lumen = 1*candela
+__define_unit(lumen, "lm")
+lux = lumen/meter**2
+__define_unit(lux, "lx")
+becquerel = second**-1
+__define_unit(becquerel, "Bq")
+gray = joule/kilogram
+__define_unit(gray, "Gy")
+sievert = joule/kilogram
+__define_unit(sievert, "Sv")
+katal = mol*second**-1
+__define_unit(katal, "kat")

@@ -2,6 +2,7 @@ from numbers import Number
 from enum import IntEnum
 from fractions import Fraction
 from math import sqrt
+from numpy import array
 
 def prime_factorization_int(n: int) -> list[tuple[int, int]]:
     if n == 1:
@@ -124,12 +125,7 @@ class Quantity:
             unit1, unit2 = self.expected_units[0], other.expected_units[0]
             newUnit = Quantity(value=unit1.value*unit2.value, units=unit1.units*unit2.units)
             newUnit.custom_string = unit1.custom_string + unit2.custom_string
-            if unit1.units == DefaultUnits.none:
-                self.expected_units = []
-                other.expected_units[0] = newUnit
-            else:
-                other.expected_units = []
-                self.expected_units[0] = newUnit
+            return [newUnit]
         return list(set(self.expected_units + other.expected_units))
     
     def to_SI(self):
@@ -172,6 +168,10 @@ class Quantity:
 
     def __float__(self):
         return self.value
+    
+    # For numpy support
+    def __array__(self):
+        return array(self.value)
 
 # ------------ DEFINITIONS ---------------
 

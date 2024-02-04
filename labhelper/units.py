@@ -91,12 +91,14 @@ class DefaultUnits(IntEnum):
 
 class Quantity:
     _SI_map: dict[int, str] = {2: "m", 3:"s", 5:"kg", 7:"K", 11:"A", 13:"mol", 17:"cd"}
-    def __init__(self, value: Number = 1, units: float = 1, expected_units: list = [], custom_string: str = "") -> None:
+    def __init__(self, value: Number = 1, units: float = 1, expected_units: list = [], custom_string: str = "", expect_self: bool = False) -> None:
         self.units = units
         self.value = value
         self.expected_units: list[Quantity] = expected_units
         self.unit_map = Quantity._SI_map
         self.custom_string: str = custom_string
+        if expect_self:
+            self.expected_units = [self]
 
     def _units_to_strings(self) -> tuple[Number, str]:
         units_vals = self.units
@@ -118,19 +120,16 @@ class Quantity:
         self.custom_string = text
 
     def _get_expected_units(self, other, division: bool = False) -> list | None:
-        if (self.units == DefaultUnits.none or other.units == DefaultUnits.none):
-            newUnit = Quantity(value=self.value*other.value, units=self.units*other.units)
-            newUnit.custom_string = self.custom_string + other.custom_string
-            if self.units == DefaultUnits.none:
-                try:
-                    other.expected_units[0] = newUnit
-                except:
-                    other.expected_units = [newUnit]
+        if self.expected_units[0].units == DefaultUnits.none or other.expected_units[0].units == DefaultUnits.none:
+            unit1, unit2 = self.expected_units[0], other.expected_units[0]
+            newUnit = Quantity(value=unit1.value*unit2.value, units=unit1.units*unit2.units)
+            newUnit.custom_string = unit1.custom_string + unit2.custom_string
+            if unit1.units == DefaultUnits.none:
+                self.expected_units = []
+                other.expected_units[0] = newUnit
             else:
-                try:
-                    self.expected_units[0] = newUnit
-                except:
-                    self.expected_units = [newUnit]
+                other.expected_units = []
+                self.expected_units[0] = newUnit
         return list(set(self.expected_units + other.expected_units))
     
     def to_SI(self):
@@ -149,17 +148,17 @@ class Quantity:
 
     def __mul__(self, other):
         if isinstance(other, Number):
-            return Quantity(value=self.value*other, units=self.units, expected_units=self.expected_units)
+            return Quantity(value=self.value*other, units=self.units, expected_units=self.expected_units, custom_string=self.custom_string)
         if isinstance(other, Quantity):
             return Quantity(value=self.value*other.value, units=self.units*other.units, expected_units=self._get_expected_units(other))
 
     def __rmul__(self, other):
         if isinstance(other, Number):
-            return Quantity(value=self.value*other, units=self.units, expected_units=self.expected_units)
+            return Quantity(value=self.value*other, units=self.units, expected_units=self.expected_units, custom_string=self.custom_string)
 
     def __truediv__(self, other):
         if isinstance(other, Number):
-            return Quantity(value=self.value/other, units=self.units)
+            return Quantity(value=self.value/other, units=self.units, custom_string=self.custom_string)
         if isinstance(other, Quantity):
             return Quantity(value=self.value/other.value, units=self.units/other.units, expected_units=self._get_expected_units(other))
 
@@ -176,43 +175,43 @@ class Quantity:
 
 # ------------ DEFINITIONS ---------------
 
-meter = Quantity(1, DefaultUnits.meter, custom_string="m")
-second = Quantity(1, DefaultUnits.second, custom_string="s")
-kilogram = Quantity(1, DefaultUnits.kilogram, custom_string="kg")
-gram = Quantity(1e-3, DefaultUnits.kilogram, custom_string="g")
-kelvin = Quantity(1, DefaultUnits.kelvin, custom_string="K")
-ampere = Quantity(1, DefaultUnits.ampere, custom_string="A")
-mol = Quantity(1, DefaultUnits.mol, custom_string="mol")
-candela = Quantity(1, DefaultUnits.candela, custom_string="cd")
-
-quetta = Quantity(1e30, units=DefaultUnits.none, custom_string="Q")
-ronna  = Quantity(1e27, units=DefaultUnits.none, custom_string="R")
-yotta  = Quantity(1e24, units=DefaultUnits.none, custom_string="Y")
-zetta  = Quantity(1e21, units=DefaultUnits.none, custom_string="Z")
-exa    = Quantity(1e18, units=DefaultUnits.none, custom_string="E")
-peta   = Quantity(1e15, units=DefaultUnits.none, custom_string="P")
-tera   = Quantity(1e12, units=DefaultUnits.none, custom_string="T")
-giga   = Quantity(1e9, units=DefaultUnits.none, custom_string="G")
-mega   = Quantity(1e6, units=DefaultUnits.none, custom_string="M")
-kilo   = Quantity(1e3, units=DefaultUnits.none, custom_string="k")
-hecto  = Quantity(1e2, units=DefaultUnits.none, custom_string="h")
-deca   = Quantity(1e1, units=DefaultUnits.none, custom_string="da")
-deci   = Quantity(1e-1, units=DefaultUnits.none, custom_string="d")
-centi  = Quantity(1e-2, units=DefaultUnits.none, custom_string="c")
-mili   = Quantity(1e-3, units=DefaultUnits.none, custom_string="m")
-micro  = Quantity(1e-6, units=DefaultUnits.none, custom_string="µ")
-nano   = Quantity(1e-9, units=DefaultUnits.none, custom_string="n")
-pico   = Quantity(1e-12, units=DefaultUnits.none, custom_string="p")
-femto  = Quantity(1e-15, units=DefaultUnits.none, custom_string="f")
-atto   = Quantity(1e-18, units=DefaultUnits.none, custom_string="a")
-zepto  = Quantity(1e-21, units=DefaultUnits.none, custom_string="z")
-yocto  = Quantity(1e-24, units=DefaultUnits.none, custom_string="y")
-ronto  = Quantity(1e-27, units=DefaultUnits.none, custom_string="r")
-quecto = Quantity(1e-30, units=DefaultUnits.none, custom_string="q")
-
 def __define_unit(unit, symbol) -> None:
     unit._set_custom_string(symbol)
     unit.expected_units = [unit]
+
+meter = Quantity(1, DefaultUnits.meter, custom_string="m", expect_self=True)
+second = Quantity(1, DefaultUnits.second, custom_string="s", expect_self=True)
+kilogram = Quantity(1, DefaultUnits.kilogram, custom_string="kg", expect_self=True)
+gram = Quantity(1e-3, DefaultUnits.kilogram, custom_string="g", expect_self=True)
+kelvin = Quantity(1, DefaultUnits.kelvin, custom_string="K", expect_self=True)
+ampere = Quantity(1, DefaultUnits.ampere, custom_string="A", expect_self=True)
+mol = Quantity(1, DefaultUnits.mol, custom_string="mol", expect_self= True)
+candela = Quantity(1, DefaultUnits.candela,custom_string="cd", expect_self=True)
+
+quetta = Quantity(1e30, units=DefaultUnits.none, custom_string="Q", expect_self=True)
+ronna  = Quantity(1e27, units=DefaultUnits.none, custom_string="R", expect_self=True)
+yotta  = Quantity(1e24, units=DefaultUnits.none, custom_string="Y", expect_self=True)
+zetta  = Quantity(1e21, units=DefaultUnits.none, custom_string="Z", expect_self=True)
+exa    = Quantity(1e18, units=DefaultUnits.none, custom_string="E", expect_self=True)
+peta   = Quantity(1e15, units=DefaultUnits.none, custom_string="P", expect_self=True)
+tera   = Quantity(1e12, units=DefaultUnits.none, custom_string="T", expect_self=True)
+giga   = Quantity(1e9, units=DefaultUnits.none, custom_string="G", expect_self=True)
+mega   = Quantity(1e6, units=DefaultUnits.none, custom_string="M", expect_self=True)
+kilo   = Quantity(1e3, units=DefaultUnits.none, custom_string="k", expect_self=True)
+hecto  = Quantity(1e2, units=DefaultUnits.none, custom_string="h", expect_self=True)
+deca   = Quantity(1e1, units=DefaultUnits.none, custom_string="da", expect_self=True)
+deci   = Quantity(1e-1, units=DefaultUnits.none, custom_string="d", expect_self=True)
+centi  = Quantity(1e-2, units=DefaultUnits.none, custom_string="c", expect_self=True)
+mili   = Quantity(1e-3, units=DefaultUnits.none, custom_string="m", expect_self=True)
+micro  = Quantity(1e-6, units=DefaultUnits.none, custom_string="µ", expect_self=True)
+nano   = Quantity(1e-9, units=DefaultUnits.none, custom_string="n", expect_self=True)
+pico   = Quantity(1e-12, units=DefaultUnits.none, custom_string="p", expect_self=True)
+femto  = Quantity(1e-15, units=DefaultUnits.none, custom_string="f", expect_self=True)
+atto   = Quantity(1e-18, units=DefaultUnits.none, custom_string="a", expect_self=True)
+zepto  = Quantity(1e-21, units=DefaultUnits.none, custom_string="z", expect_self=True)
+yocto  = Quantity(1e-24, units=DefaultUnits.none, custom_string="y", expect_self=True)
+ronto  = Quantity(1e-27, units=DefaultUnits.none, custom_string="r", expect_self=True)
+quecto = Quantity(1e-30, units=DefaultUnits.none, custom_string="q", expect_self=True)
 
 hertz = second**-1
 __define_unit(hertz, "Hz")
@@ -254,3 +253,5 @@ sievert = joule/kilogram
 __define_unit(sievert, "Sv")
 katal = mol*second**-1
 __define_unit(katal, "kat")
+
+print((2 * nano * meter).to_SI())

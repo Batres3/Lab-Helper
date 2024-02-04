@@ -253,5 +253,3 @@ sievert = joule/kilogram
 __define_unit(sievert, "Sv")
 katal = mol*second**-1
 __define_unit(katal, "kat")
-
-print((2 * nano * meter).to_SI())

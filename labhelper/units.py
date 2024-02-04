@@ -169,8 +169,11 @@ class Quantity:
     def __float__(self):
         return self.value
     
+    def __repr__(self):
+        return str(self)
+    
     # For numpy support
-    def __array__(self):
+    def __array__(self, dtype=None):
         return array(self.value)
 
 # ------------ DEFINITIONS ---------------

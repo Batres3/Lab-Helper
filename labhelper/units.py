@@ -2,7 +2,7 @@ from numbers import Number
 from enum import IntEnum
 from fractions import Fraction
 from math import sqrt
-from numpy import array
+import numpy as np
 
 def prime_factorization_int(n: int) -> list[tuple[int, int]]:
     if n == 1:
@@ -126,7 +126,8 @@ class Quantity:
             newUnit = Quantity(value=unit1.value*unit2.value, units=unit1.units*unit2.units)
             newUnit.custom_string = unit1.custom_string + unit2.custom_string
             return [newUnit]
-        return list(set(self.expected_units + other.expected_units))
+        final_self = [a for a in self.expected_units if a.units not in [e.units for e in other.expected_units]]
+        return final_self + other.expected_units
     
     def to_SI(self):
         self.expected_units = []
@@ -135,13 +136,18 @@ class Quantity:
     def to_units(self, units):
         if not isinstance(units, list):
             units = [units]
-        self.expected_units = units
+        final = []
+        for unit in units:
+            final += unit.expected_units
+        self.expected_units = final
         return self
 
     def __str__(self): 
         val, units = self._units_to_strings() 
         return f"{val} {units}"
 
+    # Multiplication
+    
     def __mul__(self, other):
         if isinstance(other, Number):
             return Quantity(value=self.value*other, units=self.units, expected_units=self.expected_units, custom_string=self.custom_string)
@@ -154,17 +160,33 @@ class Quantity:
 
     def __truediv__(self, other):
         if isinstance(other, Number):
-            return Quantity(value=self.value/other, units=self.units, custom_string=self.custom_string)
+            return Quantity(value=self.value/other, units=self.units, custom_string=self.custom_string, expected_units=self.expected_units)
         if isinstance(other, Quantity):
             return Quantity(value=self.value/other.value, units=self.units/other.units, expected_units=self._get_expected_units(other))
 
     def __rtruediv__(self, other):
         if isinstance(other, Number):
-            return Quantity(value=other/self.value, units=1/self.units, expected_units=[unit**-1 for unit in self.expected_units])
+            return Quantity(value=other/self.value, units=1/self.units, custom_string=self.custom_string, expected_units=self.expected_units)
 
     def __pow__(self, other):
         if isinstance(other, int):
             return Quantity(value=self.value**other, units=self.units**other, expected_units=self.expected_units)
+    
+    # Addition
+    def __neg__(self):
+        return Quantity(value=-self.value, units=self.units, custom_string=self.custom_string, expected_units=self.expected_units)
+    def __add__(self, other):
+        if isinstance(other, Quantity):
+            if self.units != other.units:
+                raise ValueError("Units do not match!")
+            return Quantity(value=self.value+other.value, units=self.units, expected_units=self._get_expected_units(other))
+        else:
+            raise ValueError("Quantities can only be added with other quantities")
+    def __radd__(self, other):
+        if not isinstance(other, Quantity):
+            raise ValueError("Quantities can only be added with other quantities")
+    def __sub__(self, other):
+        return self.__add__(-other)
 
     def __float__(self):
         return self.value
@@ -172,9 +194,24 @@ class Quantity:
     def __repr__(self):
         return str(self)
     
-    # For numpy support
-    def __array__(self, dtype=None):
-        return array(self.value)
+    # For numpy support -> Makes np.mean() treat Quantities as floats (annoying)
+    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
+        print(method, args)
+        out = []
+        for a in args:
+            if isinstance(a, self.__class__):
+                out.append(a.value)
+            else:
+                out.append(a)                
+        return ufunc(*out, **kwargs)
+    def __array_function__(self, func, types, *args, **kwargs):
+        out = []
+        for a in args:
+            if isinstance(a, self.__class__):
+                out.append(a.value)
+            else:
+                out.append(a)
+        return func(*out, **kwargs)
 
 # ------------ DEFINITIONS ---------------
 
@@ -256,3 +293,5 @@ sievert = joule/kilogram
 __define_unit(sievert, "Sv")
 katal = mol*second**-1
 __define_unit(katal, "kat")
+
+print(np.sqrt([newton, 2*newton]))

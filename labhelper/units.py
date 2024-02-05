@@ -1,8 +1,8 @@
 from numbers import Number
 from enum import IntEnum
+from typing import Callable
 from fractions import Fraction
-from math import sqrt
-import numpy as np
+from math import sqrt, prod, ceil, floor, trunc
 
 def prime_factorization_int(n: int) -> list[tuple[int, int]]:
     if n == 1:
@@ -146,6 +146,9 @@ class Quantity:
         val, units = self._units_to_strings() 
         return f"{val} {units}"
 
+    def __repr__(self):
+        return str(self)
+
     # Multiplication
     
     def __mul__(self, other):
@@ -191,28 +194,24 @@ class Quantity:
     def __float__(self):
         return self.value
     
-    def __repr__(self):
-        return str(self)
-    
-    # For numpy support -> Makes np.mean() treat Quantities as floats (annoying)
-    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-        print(method, args)
-        out = []
-        for a in args:
-            if isinstance(a, self.__class__):
-                out.append(a.value)
-            else:
-                out.append(a)                
-        return ufunc(*out, **kwargs)
-    def __array_function__(self, func, types, *args, **kwargs):
-        out = []
-        for a in args:
-            if isinstance(a, self.__class__):
-                out.append(a.value)
-            else:
-                out.append(a)
-        return func(*out, **kwargs)
+    # Rounding
 
+    def __round_general__(self, method: Callable, decimals: int | None = None):
+        value = self.value
+        value /= prod([e.value for e in self.expected_units])
+        rounded = method(value, decimals) if decimals is not None else method(value)
+        value = rounded * prod([e.value for e in self.expected_units])
+        return Quantity(value=value, units=self.units, custom_string=self.custom_string, expected_units=self.expected_units)
+    def __round__(self, decimals = 0): return self.__round_general__(round, decimals)
+    def __ceil__(self): return self.__round_general__(ceil)
+    def __floor__(self): return self.__round_general__(floor)
+    def __trunc__(self): return self.__round_general__(trunc)
+
+    # For numpy support -> 
+
+    def sqrt(self): return sqrt(self.value)
+    def rint(self): return self.__round__()
+    
 # ------------ DEFINITIONS ---------------
 
 def __define_unit(unit, symbol) -> None:
@@ -293,5 +292,3 @@ sievert = joule/kilogram
 __define_unit(sievert, "Sv")
 katal = mol*second**-1
 __define_unit(katal, "kat")
-
-print(np.sqrt([newton, 2*newton]))

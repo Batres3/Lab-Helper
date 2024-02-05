@@ -1,5 +1,6 @@
 import pandas as pd
 import pyperclip as pc
+from .units import Quantity
 
 def df_switch_columns(df: pd.DataFrame, column1, column2):
     """
@@ -42,7 +43,7 @@ def df_create(columns, indices) -> pd.DataFrame:
 def copy_to_clipboard(var: str):
     pc.copy(var)
 
-def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = None, index: bool = False, copy_to_clipboard: bool = True):
+def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: bool = False, copy_to_clipboard: bool = True):
     """
     Turns Pandas DataFrame into a LaTeX table, formatted as ||r|...|r|| for the given number of columns in the
     DataFrame (because I like the way it looks), automatically copies result into clipboard if copy_to_clipboard is not set to False
@@ -54,11 +55,21 @@ def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = None, index: 
 
     table_format = r"||"
     for i in range(len(df.columns)):
-        table_format += r"r|"
+        table_format += r"c|"
     table_format += "|"
+    new = []
+    for col in df.columns:
+        type = ""
+        if all(isinstance(a, Quantity) for a in df[col]):
+            type = str(df[col][0]).split(" ", 1)[-1]
+            col += f" ({type})"
+        new.append(col)
+    df.columns = new
+    df = df.map(lambda x: float(x) if isinstance(x, Quantity) else x)
     basic_latex = df.to_latex(index=index, float_format=float_format, column_format=table_format)
     latex = basic_latex.replace(r"\toprule", r"\hline\hline").replace(r"\midrule", r"\hline\hline").replace(r"\bottomrule", r"\hline")
     latex = latex.replace(r"\\", r"\\\hline").replace(r"\\\hline", r"\\", 1)
+    latex = latex.replace("e+", r"\cdot10^").replace("e-", r"\cdot10^-")
     if copy_to_clipboard:
         pc.copy(latex)
     return latex

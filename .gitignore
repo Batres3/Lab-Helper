@@ -2,6 +2,7 @@
 /build
 /labhelper.egg-info
 /.vs
+/labhelper/__pycache__
 *.whl
 *.tar.gz
 *.code-workspace

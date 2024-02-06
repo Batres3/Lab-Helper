@@ -6,3 +6,4 @@
 *.whl
 *.tar.gz
 *.code-workspace
+instructions_pip.txt

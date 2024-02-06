@@ -241,7 +241,7 @@ hecto  = Quantity(1e2, units=DefaultUnits.none, custom_string="h", expect_self=T
 deca   = Quantity(1e1, units=DefaultUnits.none, custom_string="da", expect_self=True)
 deci   = Quantity(1e-1, units=DefaultUnits.none, custom_string="d", expect_self=True)
 centi  = Quantity(1e-2, units=DefaultUnits.none, custom_string="c", expect_self=True)
-mili   = Quantity(1e-3, units=DefaultUnits.none, custom_string="m", expect_self=True)
+milli   = Quantity(1e-3, units=DefaultUnits.none, custom_string="m", expect_self=True)
 micro  = Quantity(1e-6, units=DefaultUnits.none, custom_string="µ", expect_self=True)
 nano   = Quantity(1e-9, units=DefaultUnits.none, custom_string="n", expect_self=True)
 pico   = Quantity(1e-12, units=DefaultUnits.none, custom_string="p", expect_self=True)

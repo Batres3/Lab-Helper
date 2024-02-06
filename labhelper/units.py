@@ -266,6 +266,8 @@ coulomb = ampere*second
 __define_unit(coulomb, "C")
 volt = joule/coulomb
 __define_unit(volt, "V")
+electronvolt = 1.6e-19*joule
+__define_unit(electronvolt, "eV")
 farad = coulomb/volt
 __define_unit(farad, "F")
 ohm = volt/ampere

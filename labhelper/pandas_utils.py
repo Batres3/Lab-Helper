@@ -1,5 +1,6 @@
 import pandas as pd
 import pyperclip as pc
+from numpy import zeros
 from .units import Quantity
 
 def df_switch_columns(df: pd.DataFrame, column1, column2):
@@ -73,3 +74,11 @@ def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: boo
     if copy_to_clipboard:
         pc.copy(latex)
     return latex
+
+def multiindex_df(superindices: str | list[str], subindices: list[str], num_rows: int = 0) -> pd.DataFrame:
+    if not isinstance(superindices, list):
+        superindices = [superindices]
+    cols = len(subindices) * len(superindices)
+    data = zeros([num_rows, cols])
+    return pd.DataFrame(data=data, columns=pd.MultiIndex.from_product([superindices, subindices]))
+

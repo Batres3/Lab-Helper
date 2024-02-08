@@ -129,19 +129,6 @@ class Quantity:
         final_self = [a for a in self.expected_units if a.units not in [e.units for e in other.expected_units]]
         return final_self + other.expected_units
     
-    def to_SI(self):
-        self.expected_units = []
-        return self
-    
-    def to_units(self, units):
-        if not isinstance(units, list):
-            units = [units]
-        final = []
-        for unit in units:
-            final += unit.expected_units
-        self.expected_units = final
-        return self
-
     def __str__(self): 
         val, units = self._units_to_strings() 
         return f"{val} {units}"
@@ -192,7 +179,7 @@ class Quantity:
         return self.__add__(-other)
 
     def __float__(self):
-        return self.value
+        return float(self.value)
     
     # Rounding
 
@@ -212,85 +199,50 @@ class Quantity:
     def sqrt(self): return sqrt(self.value)
     def rint(self): return self.__round__()
     
-# ------------ DEFINITIONS ---------------
+def work_on_units(func):
+    def wrapper(*args, **kwargs):
+        if args:
+            args = list(args)
+            arg = args.pop(0)
+            if isinstance(arg, Quantity):
+                final = func(arg, *args, **kwargs) if args else func(arg, **kwargs)
+            elif isinstance(arg, list):
+                final = []
+                for a in arg:
+                    final.append(wrapper(a, *args, **kwargs) if args else wrapper(a, **kwargs))
+            else:
+                final = arg
+            return final
+        else:
+            arg = kwargs.pop(list(kwargs.keys())[0])
+            if isinstance(arg, Quantity):
+                final = func(arg, **kwargs) if args else func(arg)
+            elif isinstance(arg, list):
+                final = []
+                for a in arg:
+                    final.append(wrapper(a, **kwargs) if args else wrapper(a, **kwargs))
+            else:
+                final = arg
+            return final
+    return wrapper
+@work_on_units
+def remove_units(x: Quantity):
+    val = x.value
+    for unit in x.expected_units:
+        val /= unit.value
+    return val
 
-def __define_unit(unit, symbol) -> None:
-    unit._set_custom_string(symbol)
-    unit.expected_units = [unit]
+@work_on_units
+def to_SI(x: Quantity):
+    return Quantity(x.value, x.units, [], custom_string = x.custom_string)
 
-meter = Quantity(1, DefaultUnits.meter, custom_string="m", expect_self=True)
-second = Quantity(1, DefaultUnits.second, custom_string="s", expect_self=True)
-kilogram = Quantity(1, DefaultUnits.kilogram, custom_string="kg", expect_self=True)
-gram = Quantity(1e-3, DefaultUnits.kilogram, custom_string="g", expect_self=True)
-kelvin = Quantity(1, DefaultUnits.kelvin, custom_string="K", expect_self=True)
-ampere = Quantity(1, DefaultUnits.ampere, custom_string="A", expect_self=True)
-mol = Quantity(1, DefaultUnits.mol, custom_string="mol", expect_self= True)
-candela = Quantity(1, DefaultUnits.candela,custom_string="cd", expect_self=True)
+@work_on_units
+def to_units(x, units):
+    if not isinstance(units, list):
+        units = [units]
+    final = []
+    for unit in units:
+        final += unit.expected_units
+    expected_units = final
+    return Quantity(x.value, x.units, expected_units, x.custom_string)
 
-quetta = Quantity(1e30, units=DefaultUnits.none, custom_string="Q", expect_self=True)
-ronna  = Quantity(1e27, units=DefaultUnits.none, custom_string="R", expect_self=True)
-yotta  = Quantity(1e24, units=DefaultUnits.none, custom_string="Y", expect_self=True)
-zetta  = Quantity(1e21, units=DefaultUnits.none, custom_string="Z", expect_self=True)
-exa    = Quantity(1e18, units=DefaultUnits.none, custom_string="E", expect_self=True)
-peta   = Quantity(1e15, units=DefaultUnits.none, custom_string="P", expect_self=True)
-tera   = Quantity(1e12, units=DefaultUnits.none, custom_string="T", expect_self=True)
-giga   = Quantity(1e9, units=DefaultUnits.none, custom_string="G", expect_self=True)
-mega   = Quantity(1e6, units=DefaultUnits.none, custom_string="M", expect_self=True)
-kilo   = Quantity(1e3, units=DefaultUnits.none, custom_string="k", expect_self=True)
-hecto  = Quantity(1e2, units=DefaultUnits.none, custom_string="h", expect_self=True)
-deca   = Quantity(1e1, units=DefaultUnits.none, custom_string="da", expect_self=True)
-deci   = Quantity(1e-1, units=DefaultUnits.none, custom_string="d", expect_self=True)
-centi  = Quantity(1e-2, units=DefaultUnits.none, custom_string="c", expect_self=True)
-milli   = Quantity(1e-3, units=DefaultUnits.none, custom_string="m", expect_self=True)
-micro  = Quantity(1e-6, units=DefaultUnits.none, custom_string="µ", expect_self=True)
-nano   = Quantity(1e-9, units=DefaultUnits.none, custom_string="n", expect_self=True)
-pico   = Quantity(1e-12, units=DefaultUnits.none, custom_string="p", expect_self=True)
-femto  = Quantity(1e-15, units=DefaultUnits.none, custom_string="f", expect_self=True)
-atto   = Quantity(1e-18, units=DefaultUnits.none, custom_string="a", expect_self=True)
-zepto  = Quantity(1e-21, units=DefaultUnits.none, custom_string="z", expect_self=True)
-yocto  = Quantity(1e-24, units=DefaultUnits.none, custom_string="y", expect_self=True)
-ronto  = Quantity(1e-27, units=DefaultUnits.none, custom_string="r", expect_self=True)
-quecto = Quantity(1e-30, units=DefaultUnits.none, custom_string="q", expect_self=True)
-
-hertz = second**-1
-__define_unit(hertz, "Hz")
-newton = kilogram*meter*second**-2
-__define_unit(newton, "N")
-pascal = newton/meter**2
-__define_unit(pascal, "Pa")
-joule = newton*meter
-__define_unit(joule, "J")
-watt = joule/second
-__define_unit(watt, "W")
-coulomb = ampere*second
-__define_unit(coulomb, "C")
-volt = joule/coulomb
-__define_unit(volt, "V")
-electronvolt = 1.6e-19*joule
-__define_unit(electronvolt, "eV")
-farad = coulomb/volt
-__define_unit(farad, "F")
-ohm = volt/ampere
-__define_unit(ohm, "Ω")
-siemens = ohm**-1
-__define_unit(siemens, "S")
-weber = volt*second
-__define_unit(weber, "Wb")
-tesla = weber/meter**2
-__define_unit(tesla, "T")
-henry = weber/ampere
-__define_unit(henry, "H")
-# TODO: ºC
-
-lumen = 1*candela
-__define_unit(lumen, "lm")
-lux = lumen/meter**2
-__define_unit(lux, "lx")
-becquerel = second**-1
-__define_unit(becquerel, "Bq")
-gray = joule/kilogram
-__define_unit(gray, "Gy")
-sievert = joule/kilogram
-__define_unit(sievert, "Sv")
-katal = mol*second**-1
-__define_unit(katal, "kat")

@@ -17,7 +17,7 @@ setup(
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
     python_requires=">=3.5",
-    install_requires=['scipy', 'pandas', 'numpy', 'sympy', 'IPython', 'pyperclip'],
+    install_requires=['scipy', 'pandas', 'numpy', 'sympy', 'IPython', 'pyperclip', 'Jinja2', 'seaborn'],
     keywords=['python', 'data analysis', 'lab', 'data', 'symbolic'],
     classifiers=[
         "Development Status :: 1 - Planning",

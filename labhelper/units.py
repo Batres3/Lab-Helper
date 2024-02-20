@@ -158,9 +158,53 @@ class Quantity:
         if isinstance(other, Number):
             return Quantity(value=other/self.value, units=1/self.units, custom_string=self.custom_string, expected_units=self.expected_units)
 
+    def __floordiv__(self, other):
+        if isinstance(other, Number):
+            return Quantity(value=self.value//other, units=self.units, custom_string=self.custom_string, expected_units=self.expected_units)
+        if isinstance(other, Quantity):
+            return Quantity(value=self.value//other.value, units=self.units/other.units, expected_units=self._get_expected_units(other))
+    def __rfloordiv__(self, other):
+        if isinstance(other, Number):
+            return Quantity(value=other//self.value, units=1/self.units, custom_string=self.custom_string, expected_units=self.expected_units)
+    def __mod__(self, other):
+        if isinstance(other, Number):
+            return Quantity(value=self.value%other, units=self.units, custom_string=self.custom_string, expected_units=self.expected_units)
+        if isinstance(other, Quantity):
+            return Quantity(value=self.value%other.value, units=self.units/other.units, expected_units=self._get_expected_units(other))
+    def __rmod__(self, other):
+        if isinstance(other, Number):
+            return Quantity(value=other%self.value, units=1/self.units, custom_string=self.custom_string, expected_units=self.expected_units)
+
     def __pow__(self, other):
         if isinstance(other, int):
             return Quantity(value=self.value**other, units=self.units**other, expected_units=self.expected_units)
+
+    # Comparison
+    def __lt__(self, other):
+        if isinstance(other, Quantity):
+            if other.units == self.units:
+                return self.value < other.value
+            else:
+                raise ValueError("Units do not match!")
+        else:
+            raise ValueError("Comparison is only valid between Quantities")
+    def __gt__(self, other):
+        return not self < other
+    def __eq__(self, other):
+        if isinstance(other, Quantity):
+            if other.units == self.units:
+                return self.value == other.value
+            else:
+                raise ValueError("Units do not match!")
+        else:
+            raise ValueError("Comparison is only valid between Quantities")
+    def __le__(self, other):
+        return self < other or self == other
+    def __ge__(self, other):
+        return self > other or self == other
+    def __ne__(self, other):
+        return not self == other
+
     
     # Addition
     def __neg__(self):
@@ -245,4 +289,3 @@ def to_units(x, units):
         final += unit.expected_units
     expected_units = final
     return Quantity(x.value, x.units, expected_units, x.custom_string)
-

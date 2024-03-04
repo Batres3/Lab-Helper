@@ -129,9 +129,10 @@ class Quantity:
         final_self = [a for a in self.expected_units if a.units not in [e.units for e in other.expected_units]]
         return final_self + other.expected_units
     
-    def __str__(self): 
+    def __str__(self, significant_digits: int = 3): 
         val, units = self._units_to_strings() 
-        return f"{val} {units}"
+        modifier = "%." + str(significant_digits) + "g"
+        return f"{modifier % val} {units}"
 
     def __repr__(self):
         return str(self)

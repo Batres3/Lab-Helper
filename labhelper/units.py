@@ -2,7 +2,7 @@ from numbers import Number
 from enum import IntEnum
 from typing import Callable
 from fractions import Fraction
-from math import sqrt, prod, ceil, floor, trunc
+from math import sqrt, prod, ceil, floor, trunc, log
 
 def prime_factorization_int(n: int) -> list[tuple[int, int]]:
     if n == 1:
@@ -239,10 +239,11 @@ class Quantity:
     def __floor__(self): return self.__round_general__(floor)
     def __trunc__(self): return self.__round_general__(trunc)
 
-    # For numpy support -> 
+    # For numpy support:
 
     def sqrt(self): return sqrt(self.value)
     def rint(self): return self.__round__()
+    def log(self): return log(self.value)
     
 def work_on_units(func):
     def wrapper(*args, **kwargs):

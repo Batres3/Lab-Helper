@@ -1,15 +1,15 @@
 from . import __define_unit
 from .prefixes import *
-from ..units import Quantity, DefaultUnits
+from ..units import Quantity
 
-meter = Quantity(1, DefaultUnits.meter, custom_string="m", expect_self=True)
-second = Quantity(1, DefaultUnits.second, custom_string="s", expect_self=True)
-kilogram = Quantity(1, DefaultUnits.kilogram, custom_string="kg", expect_self=True)
-gram = Quantity(1e-3, DefaultUnits.kilogram, custom_string="g", expect_self=True)
-kelvin = Quantity(1, DefaultUnits.kelvin, custom_string="K", expect_self=True)
-ampere = Quantity(1, DefaultUnits.ampere, custom_string="A", expect_self=True)
-mol = Quantity(1, DefaultUnits.mol, custom_string="mol", expect_self= True)
-candela = Quantity(1, DefaultUnits.candela,custom_string="cd", expect_self=True)
+meter = Quantity(1, 2, custom_string="m", expect_self=True)
+second = Quantity(1, 3, custom_string="s", expect_self=True)
+kilogram = Quantity(1, 5, custom_string="kg", expect_self=True)
+gram = Quantity(1e-3, 5, custom_string="g", expect_self=True)
+kelvin = Quantity(1, 7, custom_string="K", expect_self=True)
+ampere = Quantity(1, 11, custom_string="A", expect_self=True)
+mol = Quantity(1, 13, custom_string="mol", expect_self= True)
+candela = Quantity(1, 17,custom_string="cd", expect_self=True)
 
 hertz = second**-1
 __define_unit(hertz, "Hz")

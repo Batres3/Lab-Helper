@@ -36,67 +36,50 @@ def prime_factorization_int(n: int) -> list[tuple[int, int]]:
     return [(factor, power) for factor, power in zip(fac, powers)]
 
 
-def prime_factorization(n: float) -> list[tuple[int, int]]:
+def prime_factorization(n: Fraction) -> list[tuple[int, int]]:
     positive_factors = []
     negative_factors = []
 
-    top, bottom = Fraction(n).limit_denominator().as_integer_ratio()
-    positive_factors = prime_factorization_int(top)
-    negative_factors = [(factor, -power) for factor, power in prime_factorization_int(bottom)]
+    positive_factors = prime_factorization_int(n.numerator)
+    negative_factors = [(factor, -power) for factor, power in prime_factorization_int(n.denominator)]
     final = positive_factors + negative_factors
     final.sort()
     return final
 
-def custom_factors(n: float, custom_factors: list[float]):
+def custom_factors(n: Fraction, custom_factors: list[Fraction]): # TODO: Check this because it's probably wildly unoptimized
     num_factors = prime_factorization(n)
     factors_check = [prime_factorization(custom) for custom in custom_factors]
     final = []
     for fac, custom in zip(factors_check, custom_factors):
-        if all(prime_fac[0] in [e[0] for e in num_factors] for prime_fac in fac):
-        #if all(prime_fac[0] == prime_n[0] and abs(prime_fac[1]) <= abs(prime_n[1]) for prime_fac, prime_n in zip(fac, num_factors)):
-            matching = [a for a in num_factors if a[0] in [b[0] for b in fac]]
-            not_matching = [a for a in num_factors if a not in matching]
-            power = min([prime_n[1]//prime_fac[1] for prime_fac, prime_n in zip(fac, matching)], key=abs)
+        #if all(prime_fac[0] in [e[0] for e in num_factors] for prime_fac in fac):
+        not_matching = [a for a in fac if a[0] not in [b[0] for b in num_factors] ]
+        if not_matching:
+            final.append((custom, 1))
+            common_num = [a for a in num_factors if a[0] in [b[0] for b in fac]]
+            different_num = [a for a in num_factors if a not in common_num]
+            common_fac = [a for a in fac if a[0] in [b[0] for b in num_factors]]
+            different_fac = [a for a in fac if a not in common_fac]
+            common = [(a[0], a[1] - b[1]) for a, b in zip(common_num, common_fac)]
+            num_factors = common + different_num + [(a[0], -a[1]) for a in different_fac]
+            continue
+            
+        matching = [a for a in num_factors if a[0] in [b[0] for b in fac]]
+        not_matching = [a for a in num_factors if a not in matching]
+        power = min([prime_n[1]//prime_fac[1] for prime_fac, prime_n in zip(fac, matching)], key=abs)
+        if power == 0:
+            num_factors = [(prime_n[0], prime_n[1] - prime_fac[1]) for prime_fac, prime_n in zip(fac, matching) if prime_n[1] - prime_fac[1] != 0] + not_matching
+            final.append((custom, 1))
+        else:
             num_factors = [(prime_n[0], prime_n[1] - prime_fac[1]*power) for prime_fac, prime_n in zip(fac, matching) if prime_n[1] - prime_fac[1]*power != 0] + not_matching
             final.append((custom, power))
     return final + num_factors
 
-class DefaultUnits(IntEnum):
-    none = 1
-    meter = 2
-    second = 3
-    kilogram = 5
-    kelvin = 7
-    ampere = 11
-    mol = 13
-    candela = 17
-
-    def __str__(self):
-        match self:
-            case DefaultUnits.none:
-                return ""
-            case DefaultUnits.meter:
-                return "m"
-            case DefaultUnits.second:
-                return "s"
-            case DefaultUnits.kilogram:
-                return "kg"
-            case DefaultUnits.kelvin:
-                return "K"
-            case DefaultUnits.ampere:
-                return "A"
-            case DefaultUnits.mol:
-                return "mol"
-            case DefaultUnits.candela:
-                return "cd"
-
 class Quantity:
     _SI_map: dict[int, str] = {2: "m", 3:"s", 5:"kg", 7:"K", 11:"A", 13:"mol", 17:"cd"}
-    def __init__(self, value: Number = 1, units: float = 1, expected_units: list = [], custom_string: str = "", expect_self: bool = False) -> None:
-        self.units = units
+    def __init__(self, value: Number = 1, units: Fraction = 1, expected_units: list = [], custom_string: str = "", expect_self: bool = False) -> None:
+        self.units: Fraction = units
         self.value = value
         self.expected_units: list[Quantity] = expected_units
-        self.unit_map = Quantity._SI_map
         self.custom_string: str = custom_string
         if expect_self:
             self.expected_units = [self]
@@ -104,7 +87,7 @@ class Quantity:
     def _units_to_strings(self) -> tuple[Number, str]:
         units_vals = self.units
         value = self.value
-        custom_map = self.unit_map | {unit.units:unit.custom_string for unit in self.expected_units}
+        custom_map = {unit.units: unit.custom_string for unit in self.expected_units} | Quantity._SI_map
         units = []
         factors = custom_factors(units_vals, [e.units for e in self.expected_units])
         for unit in self.expected_units:
@@ -121,7 +104,7 @@ class Quantity:
         self.custom_string = text
 
     def _get_expected_units(self, other, division: bool = False) -> list | None:
-        if self.expected_units[0].units == DefaultUnits.none or other.expected_units[0].units == DefaultUnits.none:
+        if self.expected_units[0].units == 1 or other.expected_units[0].units == 1:
             unit1, unit2 = self.expected_units[0], other.expected_units[0]
             newUnit = Quantity(value=unit1.value*unit2.value, units=unit1.units*unit2.units)
             newUnit.custom_string = unit1.custom_string + unit2.custom_string

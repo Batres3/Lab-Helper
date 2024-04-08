@@ -17,6 +17,10 @@ newton = kilogram*meter*second**-2
 __define_unit(newton, "N")
 pascal = newton/meter**2
 __define_unit(pascal, "Pa")
+atmosphere = 101325 * pascal
+__define_unit(atmosphere, "atm")
+bar = 100000 * pascal
+__define_unit(bar, "bar")
 joule = newton*meter
 __define_unit(joule, "J")
 watt = joule/second

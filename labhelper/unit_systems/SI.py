@@ -57,3 +57,6 @@ sievert = joule/kilogram
 __define_unit(sievert, "Sv")
 katal = mol*second**-1
 __define_unit(katal, "kat")
+
+liter = (deci*meter)**3
+__define_unit(liter, "L")

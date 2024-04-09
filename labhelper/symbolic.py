@@ -92,7 +92,10 @@ class Helper:
         if subs:
             if not all(item in self._consts_text + self._vars_text for item in subs.keys()):
                 raise ValueError("The given variables and/or constants are not the same as in the given function")
-            return float(self._function.evalf(subs=subs))
+            try:
+                return float(self._function.evalf(subs=subs))
+            except:
+                return self._function.evalf(subs=subs)
         
         subs = {e[0]: e[1] for e in self.data_variables.items() if e[1] is not None}
         if any(isinstance(e, list) for e in subs.values()):
@@ -132,7 +135,10 @@ class Helper:
         if subs:
             if not all(item in self._consts_text + self._vars_text + self._errors_text for item in subs.keys()):
                 raise ValueError("The given variables and/or constants are not the same as in the error function")
-            return float(self._error_function.evalf(subs=subs))
+            try:
+                return float(self._error_function.evalf(subs=subs))
+            except:
+                return self._error_function.evalf(subs=subs)
 
         subs = {**self.data_variables, **self.data_errors} 
         subs = {e[0]: e[1] for e in subs.items() if e[1] is not None}

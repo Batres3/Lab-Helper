@@ -77,6 +77,8 @@ def custom_factors(n: Fraction, custom_factors: list[Fraction]): # TODO: Check t
 class Quantity:
     _SI_map: dict[int, str] = {2: "m", 3:"s", 5:"kg", 7:"K", 11:"A", 13:"mol", 17:"cd"}
     def __init__(self, value: Number = 1, units: Fraction = 1, expected_units: list = [], custom_string: str = "", expect_self: bool = False) -> None:
+        if not isinstance(units, Fraction):
+            units = Fraction(units)
         self.units: Fraction = units
         self.value = value
         self.expected_units: list[Quantity] = expected_units

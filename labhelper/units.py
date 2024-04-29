@@ -265,9 +265,7 @@ def work_on_units(func):
     return wrapper
 @work_on_units
 def remove_units(x: Quantity):
-    val = x.value
-    for unit in x.expected_units:
-        val /= unit.value
+    val, units = x._units_to_strings()
     return val
 
 @work_on_units

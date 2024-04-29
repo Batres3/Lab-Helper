@@ -47,6 +47,7 @@ def prime_factorization(n: Fraction) -> list[tuple[int, int]]:
     return final
 
 def custom_factors(n: Fraction, custom_factors: list[Fraction]): # TODO: Check this because it's probably wildly unoptimized
+    custom_factors = [e for e in custom_factors if e != 1]
     num_factors = prime_factorization(n)
     factors_check = [prime_factorization(custom) for custom in custom_factors]
     final = []
@@ -89,7 +90,8 @@ class Quantity:
     def _units_to_strings(self) -> tuple[Number, str]:
         units_vals = self.units
         value = self.value
-        custom_map = {unit.units: unit.custom_string for unit in self.expected_units} | Quantity._SI_map
+        custom_map = {unit.units: unit.custom_string for unit in self.expected_units} 
+        custom_map |= {key: val for key, val in Quantity._SI_map.items() if key not in custom_map}
         units = []
         factors = custom_factors(units_vals, [e.units for e in self.expected_units])
         for unit in self.expected_units:
@@ -106,12 +108,17 @@ class Quantity:
         self.custom_string = text
 
     def _get_expected_units(self, other, division: bool = False) -> list | None:
+        if not self.expected_units or not other.expected_units:
+            return self.expected_units + other.expected_units
+
         if self.expected_units[0].units == 1 or other.expected_units[0].units == 1:
             unit1, unit2 = self.expected_units[0], other.expected_units[0]
             newUnit = Quantity(value=unit1.value*unit2.value, units=unit1.units*unit2.units)
             newUnit.custom_string = unit1.custom_string + unit2.custom_string
             return [newUnit]
         final_self = [a for a in self.expected_units if a.units not in [e.units for e in other.expected_units]]
+        if division:
+            return final_self
         return final_self + other.expected_units
     
     def __str__(self, significant_digits: int = 3): 
@@ -138,7 +145,7 @@ class Quantity:
         if isinstance(other, Number):
             return Quantity(value=self.value/other, units=self.units, custom_string=self.custom_string, expected_units=self.expected_units)
         if isinstance(other, Quantity):
-            return Quantity(value=self.value/other.value, units=self.units/other.units, expected_units=self._get_expected_units(other))
+            return Quantity(value=self.value/other.value, units=self.units/other.units, expected_units=self._get_expected_units(other, division=True))
 
     def __rtruediv__(self, other):
         if isinstance(other, Number):
@@ -148,7 +155,7 @@ class Quantity:
         if isinstance(other, Number):
             return Quantity(value=self.value//other, units=self.units, custom_string=self.custom_string, expected_units=self.expected_units)
         if isinstance(other, Quantity):
-            return Quantity(value=self.value//other.value, units=self.units/other.units, expected_units=self._get_expected_units(other))
+            return Quantity(value=self.value//other.value, units=self.units/other.units, expected_units=self._get_expected_units(other, division=True))
     def __rfloordiv__(self, other):
         if isinstance(other, Number):
             return Quantity(value=other//self.value, units=1/self.units, custom_string=self.custom_string, expected_units=self.expected_units)

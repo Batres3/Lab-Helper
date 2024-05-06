@@ -3,3 +3,4 @@ from .pandas_utils import (df_switch_columns, df_switch_rows, df_create, copy_to
 from .symbolic import (list_swap, Helper, error_function_from_sympy_expression) 
 from .units import (remove_units, to_SI, to_units)
 from .graphing import (set_style)
+from .sym import (HelperNew)

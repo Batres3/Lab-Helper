@@ -1,6 +1,8 @@
 # All sympy stuff is hidden here for faster code parsing
 from typing import Callable, Union
-from sympy import Symbol, parse_expr, lambdify, diff, Mul, Add, Pow, sqrt, latex
+from sympy import Symbol, parse_expr, lambdify, diff, Mul, Add, Pow, sqrt, latex, init_printing
+
+init_printing()
 
 def list_swap(l: list, x, y):
     if x not in l or y not in l:

@@ -73,7 +73,7 @@ def custom_factors(n: Fraction, custom_factors: list[Fraction]): # TODO: Check t
         else:
             num_factors = [(prime_n[0], prime_n[1] - prime_fac[1]*power) for prime_fac, prime_n in zip(fac, matching) if prime_n[1] - prime_fac[1]*power != 0] + not_matching
             final.append((custom, power))
-    return final + num_factors
+    return [e for e in final + num_factors if e[1] != 0]
 
 class Quantity:
     _SI_map: dict[int, str] = {2: "m", 3:"s", 5:"kg", 7:"K", 11:"A", 13:"mol", 17:"cd"}

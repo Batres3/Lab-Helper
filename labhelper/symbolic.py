@@ -1,5 +1,5 @@
 from .sympy_enclosure import get_function
-from .units import Quantity, remove_units
+from .units import Quantity, remove_units, normalize_unit
 from IPython.display import display, Latex, Markdown
 from pandas import Series, DataFrame
 from pandas.api.types import is_list_like
@@ -55,7 +55,10 @@ class Helper:
             error_indices = [e for e in indices if error_symbol in e]
             valid_error_indices = [e.replace(error_symbol, "", 1) + "_err" for e in error_indices]
             rename_map = {invalid: valid for invalid, valid in zip(error_indices, valid_error_indices)}
-            d.rename(columns=rename_map, inplace=True)
+            if isinstance(d, DataFrame):
+                d.rename(columns=rename_map, inplace=True)
+            else:
+                d.rename(rename_map, inplace=True)
             indices = list(d.index) if isinstance(d, Series) else list(d.columns)
         
         for key, value in self._values.items():
@@ -103,6 +106,10 @@ class Helper:
         self._values |= {key: value for key, value in zip(keys, values)}
 
     def __call__(self, *args, **kwargs):
+        if kwargs:
+            if len(kwargs) != len(self.get_error_inputs()):
+                raise ValueError("When using kwargs all inputs must be provided as such (i.e. do function(input=value) for all inputs)")
+            return self._error_function(**kwargs)
         if len(args) == 1 and isinstance(args[0], Series) or isinstance(args[0], DataFrame):
             data = args[0]
             missing = self._find_missing_indices(data)
@@ -116,6 +123,10 @@ class Helper:
         return self._function(*inputs)
 
     def error(self, *args, **kwargs):
+        if kwargs:
+            if len(kwargs) != len(self.get_error_inputs()):
+                raise ValueError("When using kwargs all inputs must be provided as such (i.e. do function(input=value) for all inputs)")
+            return self._error_function(**kwargs)
         if len(args) == 1 and isinstance(args[0], Series) or isinstance(args[0], DataFrame):
             data = args[0]
             missing = self._find_missing_error_indices(data)
@@ -123,11 +134,10 @@ class Helper:
                 raise ValueError(f"Required inputs {missing} not in Series/DataFrame")
             inputs = data[self.get_error_inputs()].map(remove_units).values.T # Remove units for now since unit**1/2 is not supported
             final = self._error_function(*inputs) # In SI units
-            units = self._function(*data[self.get_inputs()].iloc[0].values)
+            units = self._function(*data[self.get_inputs()].iloc[0].values) if isinstance(data, DataFrame) else self._function(*data[self.get_inputs()].values)
             if isinstance(units, Quantity):
-                units, expected_units = units.units, units.expected_units
-                print(final)
-                final = [Quantity(value=a, units=units, expected_units=expected_units) for a in final] if is_list_like(final) else Quantity(value=final, units=units, expected_units=expected_units)
+                units = normalize_unit(units)
+                final = [a * units for a in final] if is_list_like(final) else final * units
             return final
         elif isinstance(args, tuple):
             if len(args) != len(self.get_error_inputs()):

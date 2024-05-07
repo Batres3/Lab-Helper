@@ -1,5 +1,5 @@
 from .stats import (random_error_of_mean, student_t_n, coefficient_errors, bootstrap_points)
 from .pandas_utils import (df_switch_columns, df_switch_rows, df_create, copy_to_clipboard, df_to_latex, multiindex_df)
 from .symbolic import (Helper) 
-from .units import (remove_units, to_SI, to_units)
+from .units import (remove_units, to_SI, to_units, normalize_unit)
 from .graphing import (set_style)

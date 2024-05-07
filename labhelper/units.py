@@ -281,3 +281,8 @@ def to_units(x, units):
         final += unit.expected_units
     expected_units = final
     return Quantity(x.value, x.units, expected_units, x.custom_string)
+
+@work_on_units
+def normalize_unit(x: Quantity):
+    val, dummy = x._units_to_strings()
+    return x/val

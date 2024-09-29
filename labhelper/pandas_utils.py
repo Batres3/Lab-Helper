@@ -1,5 +1,7 @@
 import pandas as pd
 import pyperclip as pc
+import re
+from .symbolic import identify_error_symbol, Helper
 from numpy import zeros
 from .units import Quantity
 
@@ -25,7 +27,7 @@ def df_switch_rows(df: pd.DataFrame, row1, row2):
 
 def df_create(columns, indices) -> pd.DataFrame:
     """
-    Returns a new DataFrame with the specified columns and indexes, 
+    Returns a new DataFrame with the specified columns and indexes,
     these can be given as a list of names (columns -> ["Input 1", "Input 2"], rows -> ["Experiment 1", "Experiment 2"])
     or as a number of columns or indexes.
     It is valid to supply a list for the columns and a number for the indices, and vice versa.
@@ -36,13 +38,26 @@ def df_create(columns, indices) -> pd.DataFrame:
         return pd.DataFrame(columns=range(columns), index=indices).fillna(0)
     elif type(columns) == list and type(indices) == int:
         return pd.DataFrame(columns=columns, index=range(indices)).fillna(0)
-    elif type(columns) == list and type(indices) == list: 
+    elif type(columns) == list and type(indices) == list:
         return pd.DataFrame(columns=columns, index=indices).fillna(0)
     else:
         raise TypeError("Only integers or lists are supported!")
 
 def copy_to_clipboard(var: str):
     pc.copy(var)
+
+def get_value_error_pairs(df: pd.DataFrame, possible_error_symbols: list[str] = Helper._possible_error_symbols) -> list[tuple[str, str]]:
+    cols = df.columns
+    error_symbol = identify_error_symbol(cols, possible_error_symbols)
+    if not error_symbol: return []
+    error_cols = [e for e in cols if error_symbol in e]
+    matching = [e.replace(error_symbol, "") for e in error_cols]
+    unmatched = [e for e in matching if e not in cols]
+    if unmatched:
+        raise ValueError(f"There are unmatched error columns: {unmatched}")
+
+    return list(zip(matching, error_cols))
+
 
 def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: bool = False, copy_to_clipboard: bool = True):
     """
@@ -52,12 +67,20 @@ def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: boo
     if number_of_decimals == None:
         float_format = None
     else:
-        float_format = "%." + str(number_of_decimals) + "g"
+        float_format = f"%#.{number_of_decimals}g"
 
-    table_format = r"||"
-    for i in range(len(df.columns)):
-        table_format += r"c|"
-    table_format += "|"
+    # Utility functions
+    def to_string(x) -> str:
+        if isinstance(x, str):
+            return x
+        if isinstance(x, float) and float_format:
+            x = float_format % x
+            if x[-1] == ".":
+                x = x[:-1]
+            return x
+        return str(x)
+
+    table_format = "|c" * len(df.columns) + "|"
     new = []
     for col in df.columns:
         type = ""
@@ -67,12 +90,23 @@ def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: boo
         new.append(col)
     df.columns = new
     df = df.map(lambda x: float(x) if isinstance(x, Quantity) else x)
-    basic_latex = df.to_latex(index=index, float_format=float_format, column_format=table_format)
-    latex = basic_latex.replace(r"\toprule", r"\hline\hline").replace(r"\midrule", r"\hline\hline").replace(r"\bottomrule", r"\hline")
+    # Handle errors
+    def match_value_to_error(x):
+        value, error = x
+        error = to_string(error)
+        num_decimals = len(error.split(".")[-1])
+        value = f"%.{num_decimals}f" % value
+        return f"${value} \\pm {error}$"
+    for value, error in get_value_error_pairs(df):
+        df[error] = df[error].map(to_string)
+        df[value] = df[[value, error]].apply(match_value_to_error, axis=1)
+        df.drop(error, axis=1, inplace=True)
+    df = df.map(to_string)
+    basic_latex = df.to_latex(index=index, column_format=table_format)
+    latex = basic_latex.replace(r"\toprule", r"\hline").replace(r"\midrule", r"\hline\hline").replace(r"\bottomrule", "")
     latex = latex.replace(r"\\", r"\\\hline").replace(r"\\\hline", r"\\", 1)
-    latex = latex.replace("e+", r"\cdot10^").replace("e-", r"\cdot10^-")
-    if copy_to_clipboard:
-        pc.copy(latex)
+    # Replace all 1.2e+03 with $1.2\cdot10^{3}$
+    latex = re.sub(r"(\d{1,}\.?\d*)e\+?(\-?)0*(\d*)", r"$\1\\cdot10^{\2\3}$",latex)
     return latex
 
 def multiindex_df(superindices: str | list[str], subindices: list[str], num_rows: int = 0) -> pd.DataFrame:

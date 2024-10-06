@@ -1,9 +1,10 @@
 import pandas as pd
+from pandas._config import display
 import pyperclip as pc
 import re
 from .symbolic import identify_error_symbol, Helper
 from numpy import zeros
-from .units import Quantity
+from .units import Quantity, remove_units
 
 def df_switch_columns(df: pd.DataFrame, column1, column2):
     """
@@ -64,6 +65,7 @@ def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: boo
     Turns Pandas DataFrame into a LaTeX table, formatted as ||r|...|r|| for the given number of columns in the
     DataFrame (because I like the way it looks), automatically copies result into clipboard if copy_to_clipboard is not set to False
     """
+    # Rename columns if all their components are units
     if number_of_decimals == None:
         float_format = None
     else:
@@ -80,16 +82,15 @@ def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: boo
             return x
         return str(x)
 
+    def rename_col(x):
+        if not df[x].map(lambda e: isinstance(e, Quantity)).product(): return x
+        new_name = f"{x} ({str(df[x][0]).split(' ', 1)[-1]})"
+        df[x] = df[x].map(remove_units)
+        return new_name
+
+    df = df.copy()
+    df.rename(rename_col, axis=1, inplace=True)
     table_format = "|c" * len(df.columns) + "|"
-    new = []
-    for col in df.columns:
-        type = ""
-        if all(isinstance(a, Quantity) for a in df[col]):
-            type = str(df[col][0]).split(" ", 1)[-1]
-            col += f" ({type})"
-        new.append(col)
-    df.columns = new
-    df = df.map(lambda x: float(x) if isinstance(x, Quantity) else x)
     # Handle errors
     def match_value_to_error(x):
         value, error = x
@@ -103,7 +104,7 @@ def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: boo
         df.drop(error, axis=1, inplace=True)
     df = df.map(to_string)
     basic_latex = df.to_latex(index=index, column_format=table_format)
-    latex = basic_latex.replace(r"\toprule", r"\hline").replace(r"\midrule", r"\hline\hline").replace(r"\bottomrule", "")
+    latex = basic_latex.replace(r"\toprule", r"\hline").replace(r"\midrule", r"\hline\hline").replace("\\bottomrule\n", "")
     latex = latex.replace(r"\\", r"\\\hline").replace(r"\\\hline", r"\\", 1)
     # Replace all 1.2e+03 with $1.2\cdot10^{3}$
     latex = re.sub(r"(\d{1,}\.?\d*)e\+?(\-?)0*(\d*)", r"$\1\\cdot10^{\2\3}$",latex)

@@ -11,7 +11,7 @@ def list_swap(l: list, x, y):
     l[el[0]], l[el[1]] = l[el[1]], l[el[0]]
 text = ["ab", "a", "b", "bc", "c"]
 
-def sort_string_list(l: list[str]) -> list[str]: 
+def sort_string_list(l: list[str]) -> list[str]:
     out = l
     for x in out:
         for y in out:
@@ -36,9 +36,8 @@ def get_function(function: str, vars: list[str], consts: list[str] = [], error_s
     lambdify_errs = [Symbol(err) for err in [a + "_err" for a in vars]] # Necessary because variables with "\Delta" are not interpreted properly
     err_func_latex = 0
     err_func_lambdify = 0
-    for i in range(len(errors)): 
+    for i in range(len(errors)):
         err_func_latex = Add(err_func_latex, Pow(Mul(errors[i], diff(func, symbols_vars[i]), evaluate= False), 2, evaluate=False))
         err_func_lambdify = Add(err_func_lambdify, Pow(Mul(lambdify_errs[i], diff(func, symbols_vars[i]), evaluate= False), 2, evaluate=False))
-    err_func_latex = sqrt(err_func_latex)
-    out_err_func = lambdify(symbols + lambdify_errs, err_func_lambdify, "numpy")
-    return out_func, latex(func), out_err_func, latex(err_func_latex)
+    out_err_func = lambdify(symbols + lambdify_errs, sqrt(err_func_lambdify), "numpy")
+    return out_func, latex(func), out_err_func, latex(sqrt(err_func_latex))

@@ -32,7 +32,7 @@ def prime_factorization_int(n: int) -> list[tuple[int, int]]:
     # number greater than 2
     if n > 2:
         fac.append(n)
-        powers.append(1) 
+        powers.append(1)
     return [(factor, power) for factor, power in zip(fac, powers)]
 
 
@@ -63,7 +63,7 @@ def custom_factors(n: Fraction, custom_factors: list[Fraction]): # TODO: Check t
             common = [(a[0], a[1] - b[1]) for a, b in zip(common_num, common_fac)]
             num_factors = common + different_num + [(a[0], -a[1]) for a in different_fac]
             continue
-            
+
         matching = [a for a in num_factors if a[0] in [b[0] for b in fac]]
         not_matching = [a for a in num_factors if a not in matching]
         power = min([prime_n[1]//prime_fac[1] for prime_fac, prime_n in zip(fac, matching)], key=abs)
@@ -90,7 +90,7 @@ class Quantity:
     def _units_to_strings(self) -> tuple[Number, str]:
         units_vals = self.units
         value = self.value
-        custom_map = {unit.units: unit.custom_string for unit in self.expected_units} 
+        custom_map = {unit.units: unit.custom_string for unit in self.expected_units}
         custom_map |= {key: val for key, val in Quantity._SI_map.items() if key not in custom_map}
         units = []
         factors = custom_factors(units_vals, [e.units for e in self.expected_units])
@@ -120,17 +120,17 @@ class Quantity:
         if division:
             return final_self
         return final_self + other.expected_units
-    
-    def __str__(self, significant_digits: int = 3): 
-        val, units = self._units_to_strings() 
-        modifier = "%." + str(significant_digits) + "g"
+
+    def __str__(self, significant_digits: int = 3):
+        val, units = self._units_to_strings()
+        modifier = f"%#.{significant_digits}g"
         return f"{modifier % val} {units}"
 
     def __repr__(self):
         return str(self)
 
     # Multiplication
-    
+
     def __mul__(self, other):
         if isinstance(other, Number):
             return Quantity(value=self.value*other, units=self.units, expected_units=self.expected_units, custom_string=self.custom_string)
@@ -198,7 +198,7 @@ class Quantity:
     def __ne__(self, other):
         return not self == other
 
-    
+
     # Addition
     def __neg__(self):
         return Quantity(value=-self.value, units=self.units, custom_string=self.custom_string, expected_units=self.expected_units)
@@ -217,7 +217,7 @@ class Quantity:
 
     def __float__(self):
         return float(self.value)
-    
+
     # Rounding
 
     def __round_general__(self, method: Callable, decimals: int | None = None):
@@ -236,7 +236,7 @@ class Quantity:
     def sqrt(self): return sqrt(self.value)
     def rint(self): return self.__round__()
     def log(self): return log(self.value)
-    
+
 def work_on_units(func):
     def wrapper(*args, **kwargs):
         if args:

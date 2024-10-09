@@ -30,7 +30,7 @@ class Helper:
         return list(self._function.__code__.co_varnames)
 
     def get_error_inputs(self, include_regular_inputs: bool = True, clean: bool = False) -> list[str]:
-        errs_only = [e for e in self._error_function.__code__.co_varnames if e not in self.get_inputs()] 
+        errs_only = [e for e in self._error_function.__code__.co_varnames if e not in self.get_inputs()]
         if clean:
             errs_only = [a.split("_err")[0] for a in self.get_error_inputs(include_regular_inputs=False)]
         if include_regular_inputs:
@@ -60,7 +60,7 @@ class Helper:
             else:
                 d.rename(rename_map, inplace=True)
             indices = list(d.index) if isinstance(d, Series) else list(d.columns)
-        
+
         for key, value in self._values.items():
             if key not in indices:
                 d[key] = value
@@ -76,10 +76,10 @@ class Helper:
                 invalid_types.append(type(key))
         if invalid_types:
             raise ValueError(f"Indexing is only allowed through strings, not {invalid_types}")
-        
+
         if all(key in self.get_inputs() for key in keys):
             return keys
-        
+
         symbol = identify_error_symbol(keys, Helper._possible_error_symbols)
         if symbol == "":
             raise ValueError(f"Key is not valid. Reminder: possible error symbols are {Helper._possible_error_symbols}")
@@ -91,13 +91,13 @@ class Helper:
             if key not in self.get_error_inputs():
                 raise ValueError(f"Key {key} is not one of {self.get_error_inputs()}")
         return final
-        
+
     def __getitem__(self, keys):
         keys = self._validate_key(keys)
         not_set = [key for key in keys if key not in self._values.keys()]
         if not_set:
             raise ValueError(f"Key {not_set} has not been set")
-        
+
         return [self._values[key] for key in keys] if len(keys) > 1 else self._values[keys[0]]
     def __setitem__(self, keys, values):
         keys = self._validate_key(keys)
@@ -147,10 +147,12 @@ class Helper:
 
 
     def __repr__(self):
-        print("Variables:")
-        display(Markdown(", ".join([f"${var}$" for var in self._vars])))
-        print("Constants:")
-        display(Markdown(", ".join([f"${var}$" for var in self._consts])))
+        if self._vars:
+            print("Variables:")
+            display(Markdown(", ".join([f"${var}$" for var in self._vars])))
+        if self._consts:
+            print("Constants:")
+            display(Markdown(", ".join([f"${var}$" for var in self._consts])))
         print("Function:")
         display(Latex(f"${self._function_latex}$"))
         print("Error Function:")

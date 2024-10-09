@@ -236,6 +236,8 @@ class Quantity:
     def sqrt(self): return sqrt(self.value)
     def rint(self): return self.__round__()
     def log(self): return log(self.value)
+    def to(self, other): return to_units(self, other)
+    def to_SI(self): return to_SI(self)
 
 def work_on_units(func):
     def wrapper(*args, **kwargs):

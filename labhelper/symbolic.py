@@ -105,6 +105,13 @@ class Helper:
             values = [values]
         self._values |= {key: value for key, value in zip(keys, values)}
 
+    def __fill_missing_inputs(self, args: tuple, needed: list[str]) -> list:
+        if len(args) + len(self._values) != len(needed):
+            raise ValueError(f"Number of inputs ({len(args) + len(self._values)}) does not match required number of inputs ({len(needed)}, {needed})\nThe follwing constants are set{list(self._values.keys())}")
+        if not self._values: return list(args)
+        nargs = list(reversed(args))
+        return [self._values[e] if e in self._values else nargs.pop() for e in needed]
+
     def __call__(self, *args, **kwargs):
         if kwargs:
             if len(kwargs) != len(self.get_error_inputs()):
@@ -117,9 +124,7 @@ class Helper:
                 raise ValueError(f"Required inputs {missing} not in Series/DataFrame")
             inputs = data[self.get_inputs()].values.T
         elif isinstance(args, tuple):
-            if len(args) != len(self.get_inputs()):
-                raise ValueError(f"Number of inputs ({len(args)}) does not match required number of inputs ({len(self.get_inputs())}, {self.get_inputs()})")
-            inputs = args
+            inputs = self.__fill_missing_inputs(args, self.get_inputs())
         return self._function(*inputs)
 
     def error(self, *args, **kwargs):
@@ -140,9 +145,7 @@ class Helper:
                 final = [a * units for a in final] if is_list_like(final) else final * units
             return final
         elif isinstance(args, tuple):
-            if len(args) != len(self.get_error_inputs()):
-                raise ValueError(f"Number of inputs ({len(args)}) does not match required number of inputs ({len(self.get_error_inputs())}, {self.get_error_inputs()})")
-            inputs = args
+            inputs = self.__fill_missing_inputs(args, self.get_error_inputs())
             return self._error_function(*inputs)
 
 

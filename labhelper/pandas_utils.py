@@ -1,6 +1,6 @@
 import pandas as pd
 from pandas._config import display
-import pyperclip as pc
+from pyperclip import copy
 import re
 from .symbolic import identify_error_symbol, Helper
 from numpy import zeros
@@ -60,7 +60,7 @@ def get_value_error_pairs(df: pd.DataFrame, possible_error_symbols: list[str] = 
     return list(zip(matching, error_cols))
 
 
-def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: bool = False, copy_to_clipboard: bool = True):
+def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: bool = False, copy_to_clipboard: bool = True, force_decimals: bool = False):
     """
     Turns Pandas DataFrame into a LaTeX table, formatted as ||r|...|r|| for the given number of columns in the
     DataFrame (because I like the way it looks), automatically copies result into clipboard if copy_to_clipboard is not set to False
@@ -69,7 +69,7 @@ def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: boo
     if number_of_decimals == None:
         float_format = None
     else:
-        float_format = f"%#.{number_of_decimals}g"
+        float_format = f"%{'#' if force_decimals else ''}.{number_of_decimals}g"
 
     # Utility functions
     def to_string(x) -> str:
@@ -108,6 +108,8 @@ def df_to_latex(df: pd.DataFrame, number_of_decimals: int | None = 2, index: boo
     latex = latex.replace(r"\\", r"\\\hline").replace(r"\\\hline", r"\\", 1)
     # Replace all 1.2e+03 with $1.2\cdot10^{3}$
     latex = re.sub(r"(\d{1,}\.?\d*)e\+?(\-?)0*(\d*)", r"$\1\\cdot10^{\2\3}$",latex)
+    if copy_to_clipboard:
+        copy(latex)
     return latex
 
 def multiindex_df(superindices: str | list[str], subindices: list[str], num_rows: int = 0) -> pd.DataFrame:

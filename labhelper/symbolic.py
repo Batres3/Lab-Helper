@@ -106,6 +106,8 @@ class Helper:
         self._values |= {key: value for key, value in zip(keys, values)}
 
     def __fill_missing_inputs(self, args: tuple, needed: list[str]) -> list:
+        if len(args) == len(needed):
+            return list(args)
         if len(args) + len(self._values) != len(needed):
             raise ValueError(f"Number of inputs ({len(args) + len(self._values)}) does not match required number of inputs ({len(needed)}, {needed})\nThe follwing constants are set{list(self._values.keys())}")
         if not self._values: return list(args)

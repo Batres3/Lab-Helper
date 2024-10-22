@@ -1,6 +1,10 @@
 from scipy.stats import t
+from scipy.optimize import curve_fit as cfit
+from numpy.typing import NDArray
 from pandas import Series
 import numpy as np
+from typing import NamedTuple
+from numbers import Number
 
 def random_error_of_mean(std, num_samples, confidence):
     """
@@ -20,20 +24,52 @@ def student_t_n(degrees_of_freedom, confidence):
 def coefficient_errors(cov):
     return np.sqrt(np.diag(cov))
 
-def bootstrap_points(x: list[float] | Series, y: list[float] | Series, xerr: list[float], yerr: list[float], num: int, keep_originals: bool = False, full_confidence: bool = False):
-    if len(x) != len(y):
-        raise ValueError("Lengths of x and y do not match!")
-    if len(x) != len(xerr):
-        raise ValueError("Lengths of x and xerr do not match!")
-    if len(y) != len(yerr):
-        raise ValueError("Lengths of y and yerr do not match!")
+def curve_fit(f, xdata, ydata, p0 = None): # simple abstraction
+    return cfit(f, xdata, ydata, [np.max(xdata)] * (f.__code__.co_argcount - 1) if not p0 else p0)
 
-    xgen, ygen = [list(np.random.normal(xi, xierr * 0.5, num)) for xi, xierr in zip(x, xerr)], [list(np.random.normal(yi, yierr * 0.5, num)) for yi, yierr in zip(y, yerr)]
-    xgen, ygen = sum(xgen, []), sum(ygen, []) # combine lists into one list
-    if keep_originals:
-        if type(x) == Series and type(y) == Series:
-            xgen, ygen = x.to_list() + xgen, y.to_list() + ygen
-        else:
-            xgen, ygen = x.append(xgen), y.append(ygen)
-    return xgen, ygen
+# this finds the measurement-related error in a given fitted parameter which is the nth (using python indexing) in the list of fitted parameters being used
+def std_fit(f,xdata,ydata,xerr,yerr, n, p0 = None):
+    num_vars = f.__code__.co_argcount - 1
+    fits=np.zeros((n, num_vars))
+    num_data = len(xdata)
+    for i in range(n):
+        errs = np.random.rand(2, num_data) * 2 - 1 # X and Y are assumed to be the same shape
+        errs = np.multiply([xerr, yerr], errs)
+        data = errs + [xdata, ydata]
+        fittedParameters, _ = curve_fit(f, *data, p0)
+        fits[i]=fittedParameters
+    return np.std(fits, axis=0)
 
+class FitResults(NamedTuple):
+    params: list[float]
+    errs: list[float]
+    original_errs: list[float]
+    boot_errs: list[float]
+    rsquared: float
+    rmse: float
+    pcov: NDArray[np.float32]
+    varnames: list[str]
+    def __repr__(self):
+        final = f"Fit Results:\nR²: {self.rsquared}\nParameters: {list(self.params)}\nRMSE: {self.rmse}\n"
+        for name, val, err, original, boot in zip(self.varnames, self.params, self.errs, self.original_errs, self.boot_errs):
+            final += f"{name} = {val} ± {err} (original: {original:#.3g}, bootstrap: {boot:#.3g})\n"
+        return final
+
+def fit(f, xdata, ydata, xerr = None, yerr = None, p0 = None) -> FitResults:
+    # type checking
+    if isinstance(xerr, Number):
+        xerr = np.full((xdata.shape[0],),xerr)
+    if isinstance(yerr, Number):
+        yerr = np.full((ydata.shape[0],), yerr)
+    use_errs = xerr is not None and yerr is not None
+    fittedParameters, pcov = curve_fit(f, xdata, ydata, p0)
+    modelPredictions = f(xdata, *fittedParameters)
+    absError = modelPredictions - ydata
+    rmse = np.sqrt(np.mean(np.square(absError))) # Root Mean Squared Error, RMSE
+    Rsquared = 1.0 - (np.var(absError) / np.var(ydata))
+    if use_errs:
+        r = std_fit(f,xdata,ydata,xerr,yerr,100, p0)
+    else:
+        r = np.zeros((pcov.shape[-1]))
+    errs = np.sqrt(np.square(r) + np.diag(pcov))
+    return FitResults(fittedParameters, errs, np.sqrt(np.diag(pcov)), r, Rsquared,rmse, pcov, f.__code__.co_varnames[1:])

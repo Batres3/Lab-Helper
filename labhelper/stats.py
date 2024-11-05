@@ -1,7 +1,7 @@
 from scipy.stats import t
 from scipy.optimize import curve_fit as cfit
 from numpy.typing import NDArray
-from pandas import Series
+from pandas import Series, DataFrame
 import numpy as np
 from typing import NamedTuple
 from numbers import Number
@@ -58,15 +58,29 @@ class FitResults(NamedTuple):
     def __repr__(self):
         final = f"Fit Results:\nR²: {self.rsquared}\nParameters: {list(self.params)}\nRMSE: {self.rmse}\n"
         for name, val, err, original, boot in zip(self.varnames, self.params, self.errs, self.original_errs, self.boot_errs):
-            final += f"{name} = {val} ± {err} (original: {original:#.3g}, bootstrap: {boot:#.3g})\n"
+            final += f"{name} = {val:#.3g} ± {err:#.3g} (original: {original:#.3g}, bootstrap: {boot:#.3g})\n"
         return final
 
-def fit(f, xdata, ydata, xerr = None, yerr = None, p0 = None, num_iter: int = 1000) -> FitResults:
+def fit(f, xdata, ydata, xerr = None, yerr = None, p0 = None, num_iter: int = 1000, data = None) -> FitResults:
     # type checking
     if isinstance(xerr, Number):
         xerr = np.full((xdata.shape[0],),xerr)
     if isinstance(yerr, Number):
         yerr = np.full((ydata.shape[0],), yerr)
+    if data is not None and not (isinstance(data, DataFrame) or isinstance(data, Series)):
+        raise TypeError("data must be a DataFrame or Series")
+    if isinstance(xdata, str):
+        if data is None:
+            raise ValueError(f"xdata was a string ({xdata}), but data was not provided")
+        if xdata not in data:
+            raise ValueError(f"xdata ({xdata}) was not found in data")
+        xdata = data[xdata]
+    if isinstance(ydata, str):
+        if data is None:
+            raise ValueError(f"ydata was a string ({ydata}), but data was not provided")
+        if ydata not in data:
+            raise ValueError(f"ydata ({ydata}) was not found in data")
+        ydata = data[ydata]
     if f is None:
         f = 1
     polynomial = isinstance(f, int)

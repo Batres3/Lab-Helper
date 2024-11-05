@@ -63,26 +63,40 @@ class FitResults(NamedTuple):
 
 def fit(f, xdata, ydata, xerr = None, yerr = None, p0 = None, num_iter: int = 1000, data = None) -> FitResults:
     # type checking
-    if isinstance(xerr, Number):
-        xerr = np.full((xdata.shape[0],),xerr)
-    if isinstance(yerr, Number):
-        yerr = np.full((ydata.shape[0],), yerr)
     if data is not None and not (isinstance(data, DataFrame) or isinstance(data, Series)):
         raise TypeError("data must be a DataFrame or Series")
     if isinstance(xdata, str):
         if data is None:
-            raise ValueError(f"xdata was a string ({xdata}), but data was not provided")
+            raise ValueError(f"{xdata} was a string ({xdata}), but data was not provided")
         if xdata not in data:
-            raise ValueError(f"xdata ({xdata}) was not found in data")
+            raise ValueError(f"{xdata} ({xdata}) was not found in data")
         xdata = data[xdata]
     if isinstance(ydata, str):
         if data is None:
-            raise ValueError(f"ydata was a string ({ydata}), but data was not provided")
+            raise ValueError(f"{ydata} was a string ({ydata}), but data was not provided")
         if ydata not in data:
-            raise ValueError(f"ydata ({ydata}) was not found in data")
+            raise ValueError(f"{ydata} ({ydata}) was not found in data")
         ydata = data[ydata]
+    if isinstance(xerr, str):
+        if data is None:
+            raise ValueError(f"{xerr} was a string ({xerr}), but data was not provided")
+        if xerr not in data:
+            raise ValueError(f"{xerr} ({xerr}) was not found in data")
+        xerr = data[xerr]
+    if isinstance(yerr, str):
+        if data is None:
+            raise ValueError(f"{yerr} was a string ({yerr}), but data was not provided")
+        if yerr not in data:
+            raise ValueError(f"{yerr} ({yerr}) was not found in data")
+        yerr = data[yerr]
+    if isinstance(xerr, Number):
+        xerr = np.full((xdata.shape[0],),xerr)
+    if isinstance(yerr, Number):
+        yerr = np.full((ydata.shape[0],), yerr)
     if f is None:
         f = 1
+
+    # Actual code
     polynomial = isinstance(f, int)
     use_errs = xerr is not None and yerr is not None
     fittedParameters, pcov = curve_fit(f, xdata, ydata, p0)

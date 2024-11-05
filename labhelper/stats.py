@@ -85,7 +85,7 @@ def fit(f, xdata, ydata, xerr = None, yerr = None, p0 = None, num_iter: int = 10
         r = np.zeros((pcov.shape[-1]))
     errs = np.sqrt(np.square(r) + np.diag(pcov))
     if polynomial:
-        varnames = [f"order {i}" for i in range(len(fittedParameters))]
+        varnames = [f"order {i}" for i in reversed(range(len(fittedParameters)))]
     else:
         varnames = f.__code__.co_varnames[1:]
     return FitResults(fittedParameters, errs, np.sqrt(np.diag(pcov)), r, Rsquared,rmse, pcov, varnames)

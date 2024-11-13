@@ -5,6 +5,9 @@ from pandas import Series, DataFrame
 import numpy as np
 from typing import NamedTuple
 from numbers import Number
+from functools import partial
+from multiprocessing import Pool
+from os import sched_getaffinity
 
 def random_error_of_mean(std, num_samples, confidence):
     """
@@ -31,19 +34,31 @@ def curve_fit(f, xdata, ydata, p0 = None): # simple abstraction
         return cfit(f, xdata, ydata, [np.max(xdata)] * (f.__code__.co_argcount - 1) if not p0 else p0)
 
 # this finds the measurement-related error in a given fitted parameter which is the nth (using python indexing) in the list of fitted parameters being used
-def std_fit(f,xdata,ydata,xerr,yerr, n, p0 = None):
+def __get_singe_error(i, f, n, xdata, ydata, xerr, yerr, p0):
+    errs = np.random.rand(2, n) * 2 - 1 # X and Y are assumed to be the same shape
+    errs = np.multiply([xerr, yerr], errs)
+    data = errs + [xdata, ydata]
+    fittedParameters, _ = curve_fit(f, *data, p0)
+    return fittedParameters
+def std_fit(f,xdata,ydata,xerr,yerr, n, threads, p0 = None):
     if isinstance(f, int):
         num_vars = f + 1
     else:
         num_vars = f.__code__.co_argcount - 1
-    fits=np.zeros((n, num_vars))
+    #fits=np.zeros((n, num_vars))
     num_data = len(xdata)
-    for i in range(n):
-        errs = np.random.rand(2, num_data) * 2 - 1 # X and Y are assumed to be the same shape
-        errs = np.multiply([xerr, yerr], errs)
-        data = errs + [xdata, ydata]
-        fittedParameters, _ = curve_fit(f, *data, p0)
-        fits[i]=fittedParameters
+    if threads > 1:
+        pool = Pool(threads)
+        func = partial(__get_singe_error, f=f, n=num_data, xdata=xdata, ydata=ydata, xerr=xerr, yerr=yerr, p0=p0)
+        fits = np.fromiter(pool.imap_unordered(func, range(n), chunksize=n//threads), dtype = np.dtype((float, 2)))
+    else:
+        fits=np.zeros((n, num_vars))
+        for i in range(n):
+            errs = np.random.rand(2, num_data) * 2 - 1 # X and Y are assumed to be the same shape
+            errs = np.multiply([xerr, yerr], errs)
+            data = errs + [xdata, ydata]
+            fittedParameters, _ = curve_fit(f, *data, p0)
+            fits[i]=fittedParameters
     return np.std(fits, axis=0)
 
 class FitResults(NamedTuple):
@@ -61,7 +76,13 @@ class FitResults(NamedTuple):
             final += f"{name} = {val:#.3g} ± {err:#.3g} (original: {original:#.3g}, bootstrap: {boot:#.3g})\n"
         return final
 
-def fit(f, xdata, ydata, xerr = None, yerr = None, p0 = None, num_iter: int = 1000, data = None) -> FitResults:
+def fit(f, xdata, ydata, xerr = None, yerr = None, p0 = None, num_iter: int = 1000, data = None, threads = 1) -> FitResults:
+    """
+    Fits the data to the given function (f), using the given errors.
+    Set f to an integer (1, 2, 3, ...) for a polynomial fit of that degree
+    Supports multithreading, set threads = 0 to use the maximum number of available threads
+    on your CPU.
+    """
     # type checking
     if data is not None and not (isinstance(data, DataFrame) or isinstance(data, Series)):
         raise TypeError("data must be a DataFrame or Series")
@@ -95,6 +116,8 @@ def fit(f, xdata, ydata, xerr = None, yerr = None, p0 = None, num_iter: int = 10
         yerr = np.full((ydata.shape[0],), yerr)
     if f is None:
         f = 1
+    if threads == 0:
+        threads = len(sched_getaffinity(0))
 
     # Actual code
     polynomial = isinstance(f, int)
@@ -108,7 +131,7 @@ def fit(f, xdata, ydata, xerr = None, yerr = None, p0 = None, num_iter: int = 10
     rmse = np.sqrt(np.mean(np.square(absError))) # Root Mean Squared Error, RMSE
     Rsquared = 1.0 - (np.var(absError) / np.var(ydata))
     if use_errs:
-        r = std_fit(f,xdata,ydata,xerr,yerr,num_iter, p0)
+        r = std_fit(f,xdata,ydata,xerr,yerr,num_iter, threads, p0)
     else:
         r = np.zeros((pcov.shape[-1]))
     errs = np.sqrt(np.square(r) + np.diag(pcov))
